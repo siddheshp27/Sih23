@@ -1,0 +1,6 @@
+node_modules/
+wallet/
+
+/chaincode/node_modules/
+.env
+.env.local
