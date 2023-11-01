@@ -1,3 +1,14 @@
+<<<<<<< HEAD
+import { useRef, useReducer } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Home from './components/Home';
+import Register from './components/Register';
+import CertificateGenerator from './components/CertificateGenrator';
+import Certificate from './components/Certificate';
+import SuccessPage from './components/SuccessPage';
+import Admin from './components/Admin';
+function App() {
+=======
 import { useRef, useReducer, useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 // import { MyContext } from './MyContext';
@@ -13,6 +24,7 @@ import Register from './components/userRegistration';
 function App() {
   const { loggedUserData } = useContext(ClientContext);
   // console.log(loggedUserData);
+>>>>>>> b11a4a1 (Changed UserRegistration)
   const initialState = {
     name: 'Your Name',
     course: 'Your Course',
@@ -37,12 +49,20 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Home />}></Route>
+<<<<<<< HEAD
+        <Route path="/register" element={<Register />}></Route>
+        <Route path="/generate" element={<CertificateGenerator formState={formState} dispatch={dispatch} />}></Route>
+        <Route path="/generated-certificate" element={<Certificate {...formState} />}></Route>
+        <Route path="/addDetails" element={<SuccessPage />}></Route>
+        <Route path="/admin" element={<Admin />}></Route>
+=======
         <Route path="/login" element={<Login />}></Route>
         <Route path="/generate" element={<CertificateGenerator formState={formState} dispatch={dispatch} />}></Route>
         <Route path="/generated-certificate" element={<Certificate {...formState} />}></Route>
         <Route path="/register" element={<Register />}></Route>
         <Route path="/admin" element={<Admin />}></Route>
         <Route path="/organization" element={<Organization />}></Route>
+>>>>>>> b11a4a1 (Changed UserRegistration)
       </Routes>
     </Router>
   );
