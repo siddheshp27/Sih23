@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Nav from './Nav';
 import axios from 'axios';
 
 export default function Organization() {
@@ -34,7 +35,8 @@ export default function Organization() {
   };
 
   return (
-    <div className="p-7 m-7 bg-white">
+    <div>
+      <Nav />
       <div></div>
       <button onClick={clickHandle}>Create Certificate</button>
     </div>

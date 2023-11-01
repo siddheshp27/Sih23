@@ -3,7 +3,8 @@ const FabricCAServices = require('fabric-ca-client');
 const fs = require('fs');
 const path = require('path');
 
-async function registerUser(firstName, lastName, role, userId, hashedPassword, age, gender, address, phoneNumber) {
+async function registerUser(data) {
+  // firstName, lastName, role, userId, hashedPassword, age, gender, address, phoneNumber) {
   try {
     // load the network configuration
     const ccpPath = path.resolve(
@@ -27,9 +28,9 @@ async function registerUser(firstName, lastName, role, userId, hashedPassword, a
     const wallet = await Wallets.newFileSystemWallet(walletPath);
 
     // Check to see if we've already enrolled the user.
-    const userIdentity = await wallet.get(userId);
+    const userIdentity = await wallet.get(data.userId);
     if (userIdentity) {
-      console.log(`An identity for the user ${userId} already exists in the wallet`);
+      console.log(`An identity for the user ${data.userId} already exists in the wallet`);
       return;
     }
 
@@ -47,60 +48,63 @@ async function registerUser(firstName, lastName, role, userId, hashedPassword, a
 
     // Register the user, enroll the user, and import the new identity into the wallet.
 
-    let attrs = [
-      {
-        name: 'role',
-        value: role,
-        ecert: true
-      },
-      {
-        name: 'firstName',
-        value: firstName,
-        ecert: true
-      },
-      {
-        name: 'lastName',
-        value: lastName,
-        ecert: true
-      },
-      {
-        name: 'hashedPassword',
-        value: hashedPassword,
-        ecert: true
-      },
-      {
-        name: 'age',
-        value: age,
-        ecert: true
-      },
-      {
-        name: 'gender',
-        value: gender,
-        ecert: true
-      },
-      {
-        name: 'address',
-        value: address,
-        ecert: true
-      },
-      {
-        name: 'phoneNumber',
-        value: phoneNumber,
-        ecert: true
-      }
-    ];
+    let attrs;
+    if (data.role === 'organization') {
+      attrs = [
+        {
+          name: 'role',
+          value: data.role,
+          ecert: true
+        },
+        {
+          name: 'firstName',
+          value: data.firstName,
+          ecert: true
+        },
+        {
+          name: 'lastName',
+          value: data.lastName,
+          ecert: true
+        },
+        {
+          name: 'hashedPassword',
+          value: data.hashedPassword,
+          ecert: true
+        },
+        {
+          name: 'age',
+          value: data.age,
+          ecert: true
+        },
+        {
+          name: 'gender',
+          value: data.gender,
+          ecert: true
+        },
+        {
+          name: 'address',
+          value: data.address,
+          ecert: true
+        },
+        {
+          name: 'phoneNumber',
+          value: data.phoneNumber,
+          ecert: true
+        }
+      ];
+    }
 
     const secret = await ca.register(
       {
         affiliation: 'org1.department1',
-        enrollmentID: userId,
+        enrollmentID: data.userId,
         role: 'client',
         attrs: attrs
       },
       adminUser
     );
     const enrollment = await ca.enroll({
-      enrollmentID: userId,
+      enrollmentID: data.userId,
       enrollmentSecret: secret
     });
     const x509Identity = {
@@ -111,11 +115,11 @@ async function registerUser(firstName, lastName, role, userId, hashedPassword, a
       mspId: 'Org1MSP',
       type: 'X.509'
     };
-    await wallet.put(userId, x509Identity);
-    console.log(`Successfully registered and enrolled user ${userId} and imported it into the wallet`);
+    await wallet.put(data.userId, x509Identity);
+    console.log(`Successfully registered and enrolled user ${data.userId} and imported it into the wallet`);
     return 'success';
   } catch (error) {
-    console.error(`Failed to register user ${userId}: ${error}`);
+    console.error(`Failed to register user ${data.userId}: ${error}`);
     process.exit(1);
   }
 }

@@ -7,7 +7,7 @@ const Login = () => {
 
   const registerApi = async (e) => {
     e.preventDefault();
-    const res = await axios.post('http://localhost:3000/api/auth/registerUser');
+    const res = await axios.post('http://localhost:3000/api/auth/initiateRegisterUser');
     console.log(res.data.url);
     window.location.href = res.data.url;
   };

@@ -38,41 +38,36 @@ const isAdmin = async (req, res, next) => {
   }
 };
 
-// const myRoute = (request, response) => {
-// 	const csrfToken = generateToken(response, request);
-
-// 	res.json({ csrfToken });
-// };
-
-// router.post('/registerUser', authMiddleware, async (req, res) => {
-//   console.log('registerUser');
-//   console.log(req.body);
-//   let role = req.body.role;
-
-//   if (role === 'user') {
-//     let firstName = req.body.firstName;
-//     let lastName = req.body.lastName;
-//     let username = req.body.userId;
-//     let password = req.body.password;
-//     let hashedPassword = await userUtils.encryptPassword(password);
-//     let age = req.body.age.toString();
-//     let gender = req.body.gender;
-//     let address = req.body.address;
-//     let phoneNumber = req.body.phoneNumber;
-
-//     let user = await userUtils.getUserById(username);
-
-//     if (user) {
-//       return res.sendStatus(409);
-//     }
-
-//     await registerUser(firstName, lastName, role, username, hashedPassword, age, gender, address, phoneNumber);
-//   } else {
-//     return res.json({ error: 'user registeration only' });
-//   }
-
-//   res.json(req.body);
-// });
+{
+  // const myRoute = (request, response) => {
+  // 	const csrfToken = generateToken(response, request);
+  // 	res.json({ csrfToken });
+  // };
+  // router.post('/registerUser', authMiddleware, async (req, res) => {
+  //   console.log('registerUser');
+  //   console.log(req.body);
+  //   let role = req.body.role;
+  //   if (role === 'user') {
+  //     let firstName = req.body.firstName;
+  //     let lastName = req.body.lastName;
+  //     let username = req.body.userId;
+  //     let password = req.body.password;
+  //     let hashedPassword = await userUtils.encryptPassword(password);
+  //     let age = req.body.age.toString();
+  //     let gender = req.body.gender;
+  //     let address = req.body.address;
+  //     let phoneNumber = req.body.phoneNumber;
+  //     let user = await userUtils.getUserById(username);
+  //     if (user) {
+  //       return res.sendStatus(409);
+  //     }
+  //     await registerUser(firstName, lastName, role, username, hashedPassword, age, gender, address, phoneNumber);
+  //   } else {
+  //     return res.json({ error: 'user registeration only' });
+  //   }
+  //   res.json(req.body);
+  // });
+}
 
 async function setuReq(purpose, obj) {
   const headers = [
@@ -156,11 +151,11 @@ async function setuReq(purpose, obj) {
   };
 
   const response = await axios.request(config);
-  console.log(JSON.stringify(response.data));
+  // console.log(JSON.stringify(response.data));
   return response.data;
 }
 
-router.post('/registerUser', async (req, res) => {
+router.post('/initiateRegisterUser', async (req, res) => {
   const redirectUrl = 'http://localhost:5173/register';
 
   const response = await setuReq('register', { redirectUrl });
@@ -169,16 +164,21 @@ router.post('/registerUser', async (req, res) => {
 
 router.post('/getAadhar', async (req, res) => {
   const dId = req.body.dId;
-  console.log(dId);
-
   const response = await setuReq('getAadhar', { dId });
   const details = response.aadhaar;
-
   const aId = details.maskedNumber;
   const userName = aId.substring(aId.length - 4);
   const buffer = Buffer.from(details.photo, 'base64');
   const photo = await uploadToS3(userName + 'pp', buffer);
-  const resp = { photo, name: details.name, userName, gender: details.gender, dob: details.dateOfBirth };
+  const resp = {
+    photo,
+    name: details.name,
+    userName,
+    gender: details.gender,
+    dob: details.dateOfBirth,
+    age: details.age,
+    address: JSON.stringify(details.address)
+  };
   res.json(resp);
 });
 
@@ -217,22 +217,22 @@ router.post('/registerUser', async (req, res) => {
 
   let userName = req.body.userName;
   let name = req.body.name;
+  let email = req.body.email;
   let dob = req.body.dob;
   let photo = req.body.photo;
-
+  let gender = req.body.gender;
   let password = req.body.password;
   let hashedPassword = await userUtils.encryptPassword(password);
   let address = req.body.address;
-  let email = req.body.email;
   let phoneNumber = req.body.phoneNumber;
 
-  let user = await userUtils.getUserById(orgId);
+  let user = await userUtils.getUserById(userName);
 
   if (user) {
     return res.sendStatus(409);
   }
 
-  await registerUser({ orgId, orgName, email, role: 'organization', hashedPassword, address, phoneNumber });
+  await registerUser({ userName, name, email, gender, role: 'user', dob, photo, hashedPassword, address, phoneNumber });
 });
 
 router.post('/login', async (req, res) => {

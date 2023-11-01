@@ -3,7 +3,7 @@ const FabricCAServices = require('fabric-ca-client');
 const fs = require('fs');
 const path = require('path');
 
-async function registerUser(obj) {
+async function registerUser(data) {
   try {
     // load the network configuration
     const ccpPath = path.resolve(
@@ -27,10 +27,10 @@ async function registerUser(obj) {
     const wallet = await Wallets.newFileSystemWallet(walletPath);
 
     // Check to see if we've already enrolled the user.
-    const userIdentity = await wallet.get(obj.orgId);
+    const userIdentity = await wallet.get(data.orgId);
     if (userIdentity) {
-      console.log(`An identity for the user ${obj.orgId} already exists in the wallet`);
-      return `An identity for the user ${obj.orgId} already exists in the wallet`;
+      console.log(`An identity for the user ${data.orgId} already exists in the wallet`);
+      return `An identity for the user ${data.orgId} already exists in the wallet`;
     }
 
     // Check to see if we've already enrolled the admin user.
@@ -41,97 +41,97 @@ async function registerUser(obj) {
       return;
     }
 
-    // build a user object for authenticating with the CA
+    // build a user dataect for authenticating with the CA
     const provider = wallet.getProviderRegistry().getProvider(adminIdentity.type);
     const adminUser = await provider.getUserContext(adminIdentity, 'admin');
 
     // Register the user, enroll the user, and import the new identity into the wallet.
     let attrs;
-    if (obj.role === 'organization')
+    if (data.role === 'organization')
       attrs = [
         {
           name: 'role',
-          value: obj.role,
+          value: data.role,
           ecert: true
         },
         {
           name: 'orgName',
-          value: obj.orgName,
+          value: data.orgName,
           ecert: true
         },
         {
           name: 'email',
-          value: obj.email,
+          value: data.email,
           ecert: true
         },
         {
           name: 'hashedPassword',
-          value: obj.hashedPassword,
+          value: data.hashedPassword,
           ecert: true
         },
 
         {
           name: 'address',
-          value: obj.address,
+          value: data.address,
           ecert: true
         },
         {
           name: 'phoneNumber',
-          value: obj.phoneNumber,
+          value: data.phoneNumber,
           ecert: true
         }
       ];
-    else if (obj.role === 'user') {
+    else if (data.role === 'user') {
       attrs = [
         {
           name: 'role',
-          value: obj.role,
+          value: data.role,
           ecert: true
         },
         {
-          name: 'firstName',
-          value: obj.firstName,
+          name: 'name',
+          value: data.name,
           ecert: true
         },
         {
-          name: 'lastName',
-          value: obj.lastName,
+          name: 'email',
+          value: data.email,
           ecert: true
         },
         {
-          name: 'aadhaar',
-          value: obj.aadhar,
+          name: 'photo',
+          value: data.photo,
           ecert: true
         },
         {
           name: 'hashedPassword',
-          value: obj.hashedPassword,
+          value: data.hashedPassword,
           ecert: true
         },
         {
-          name: 'age',
-          value: obj.age,
+          name: 'dob',
+          value: data.dob,
           ecert: true
         },
         {
           name: 'gender',
-          value: obj.gender,
+          value: data.gender,
           ecert: true
         },
         {
           name: 'address',
-          value: obj.address,
+          value: data.address,
           ecert: true
         },
         {
           name: 'phoneNumber',
-          value: obj.phoneNumber,
+          value: data.phoneNumber,
           ecert: true
         }
       ];
     }
-    let userId = obj.role === 'organization' ? obj.orgId : obj.userId;
-    console.log(obj, obj.role, userId, obj.orgId);
+    let userId = data.role === 'organization' ? data.orgId : data.userName;
+    console.log(data, data.role, userId);
 
     const secret = await ca.register(
       {

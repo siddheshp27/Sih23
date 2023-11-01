@@ -13,7 +13,6 @@ exports.uploadToS3 = async (id, buffer) => {
 
   try {
     const response = await client.send(command);
-    console.log(response.data);
     return `${bucketUrl}${id}`;
   } catch (err) {
     console.error(err);
