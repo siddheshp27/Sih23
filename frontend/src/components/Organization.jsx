@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Nav from './Nav';
 import axios from 'axios';
+import SideBar from './SideBar';
 
 export default function Organization() {
   const clickHandle = (e) => {
@@ -35,10 +36,12 @@ export default function Organization() {
   };
 
   return (
-    <div>
-      <Nav />
-      <div></div>
-      <button onClick={clickHandle}>Create Certificate</button>
+    <div className="flex">
+      <SideBar active="certificates" />
+      <div className="flex flex-col  w-4/5">
+        <Nav />
+        <div className="bg-neutral  flex-grow "></div>
+      </div>
     </div>
   );
 }

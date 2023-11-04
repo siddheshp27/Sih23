@@ -119,16 +119,13 @@ async function registerUser(data) {
           ecert: true
         },
         {
-          name: 'address',
-          value: data.address,
-          ecert: true
-        },
-        {
           name: 'phoneNumber',
           value: data.phoneNumber,
           ecert: true
         }
       ];
+    } else {
+      return `Invalid Role : ${data.role}`;
     }
     let userId = data.role === 'organization' ? data.orgId : data.userName;
     console.log(data, data.role, userId);
@@ -156,10 +153,10 @@ async function registerUser(data) {
     };
     await wallet.put(userId, x509Identity);
     console.log(`Successfully registered and enrolled user ${userId} and imported it into the wallet`);
-    return 'success';
+    return { success: `Successfully registered and enrolled user ${userId}` };
   } catch (error) {
     console.error(`Failed to register user : ${error}`);
-    process.exit(1);
+    return { error: `Failed to register user : ${error}` };
   }
 }
 

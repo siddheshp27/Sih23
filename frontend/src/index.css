@@ -1,6 +1,16 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  .sidebarActive {
+    @apply bg-gray-100 text-gray-700;
+  }
+  .sidebarDeactive {
+    @apply text-gray-500 hover:bg-gray-100 hover:text-gray-700;
+  }
+}
+
 body {
   margin: 0;
   font-family: 'SF Pro Display', SF Pro Icons, Helvetica Neue, Helvetica, Arial, sans-serif;

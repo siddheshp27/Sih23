@@ -25,8 +25,10 @@ pushd ../../fabric-samples/test-network
 ./network.sh deployCC -ccn certificateContract -cci initLedger -ccl javascript -ccp ${CC_SRC_PATH}
 popd
 
+node ../enrollAdmin.js
 cat <<EOF
 
 Total setup execution time : $(($(date +%s) - starttime)) secs ...
+
 
 EOF

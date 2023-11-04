@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
-import { Link, json } from 'react-router-dom';
+import React, { useContext, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { UserContext } from '../userContext';
 
 const Login = () => {
   const [lgData, setLgData] = useState({ username: '', password: '' });
+
+  const { setUserData } = useContext(UserContext);
+
+  const navigate = useNavigate();
 
   const registerApi = async (e) => {
     e.preventDefault();
@@ -25,12 +30,18 @@ const Login = () => {
   const login = async (e) => {
     e.preventDefault();
     const res = await axios.post('http://localhost:3000/api/auth/login', lgData);
+    const userData = res.data.userData;
     const data = res.data;
-    // console.log(data.accessToken);
-    localStorage.setItem('acT', data.accessToken);
-    console.log(localStorage.getItem('acT'));
-    sessionStorage.setItem('rfT', data.refreshToken);
-    window.location.href = `http://localhost:5173/${data.userRole}`;
+    if (!data.error) {
+      console.log(data);
+      sessionStorage.setItem('acT', data.accessToken);
+      console.log(sessionStorage.getItem('acT'));
+      sessionStorage.setItem('rfT', data.refreshToken);
+      setUserData(userData);
+      navigate(`/${userData.role}`);
+    } else {
+      console.log(data.error);
+    }
   };
 
   return (
@@ -64,7 +75,7 @@ const Login = () => {
 
             <form onSubmit={login} className="mt-8 grid grid-cols-6 gap-6">
               <div className="col-span-6">
-                <label for="UserName" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="UserName" className="block text-sm font-medium text-gray-700">
                   Username
                 </label>
 
@@ -79,7 +90,7 @@ const Login = () => {
                 />
               </div>
               <div className="col-span-6 ">
-                <label for="Password" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="Password" className="block text-sm font-medium text-gray-700">
                   Password
                 </label>
 

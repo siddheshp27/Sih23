@@ -213,7 +213,6 @@ router.post('/registerOrg', authMiddleware, isAdmin, async (req, res) => {
 
 router.post('/registerUser', async (req, res) => {
   console.log('Register User!!!');
-  console.log(req.body);
 
   let userName = req.body.userName;
   let name = req.body.name;
@@ -223,16 +222,20 @@ router.post('/registerUser', async (req, res) => {
   let gender = req.body.gender;
   let password = req.body.password;
   let hashedPassword = await userUtils.encryptPassword(password);
-  let address = req.body.address;
   let phoneNumber = req.body.phoneNumber;
 
   let user = await userUtils.getUserById(userName);
 
   if (user) {
-    return res.sendStatus(409);
+    return res.status(409).json('User Already Exists');
   }
 
-  await registerUser({ userName, name, email, gender, role: 'user', dob, photo, hashedPassword, address, phoneNumber });
+  const regResponse = await registerUser({ userName, name, email, gender, role: 'user', dob, photo, hashedPassword, phoneNumber });
+  if (regResponse.success) {
+    res.status(200).json(regResponse);
+  } else {
+    res.status(411).json(regResponse);
+  }
 });
 
 router.post('/login', async (req, res) => {
@@ -242,13 +245,11 @@ router.post('/login', async (req, res) => {
   let username = req.body.username;
   let password = req.body.password;
   let user = await userUtils.getUserById(username);
-  let redirectUrl;
-
-  if (!user) {
-    return res.sendStatus(404); // user doesn't exist
-  }
   const userRole = await userUtils.getUserRole(username);
 
+  if (!user) {
+    return res.status(404).json('User Does Not Exists'); // user doesn't exist
+  }
   if (userRole === 'admin') {
     // const adminPassword = await userUtils.getAdminEnrollmentSecret();
     const adminPassword = 'adminpw';
@@ -259,22 +260,36 @@ router.post('/login', async (req, res) => {
   } else {
     const hashedPassword = await userUtils.getUserHashedPassword(username);
     const isPasswordMatch = await userUtils.comparePasswords(password, hashedPassword);
+    console.log('incorrect password');
     if (!isPasswordMatch) {
-      console.log('incorrect password');
-      return res.sendStatus(404);
+      return res.status(207).json({ error: 'Incorrect Password' });
     }
   }
+  const userAttrs = await userUtils.getUserAttrs(username);
+  const userData = {};
+  const attrsNeeded = ['role', 'name', 'email', 'photo', 'hf.EnrollmentID'];
+  // userAttrs.forEach((obj) => {});
+  for (obj of userAttrs) {
+    // console.log();
+    if (attrsNeeded.includes(obj.name)) {
+      if (obj.name === 'hf.EnrollmentID') userData['userName'] = obj.value;
+      else userData[obj.name] = obj.value;
+    }
+  }
+  console.log(userData);
 
-  let userJson = { userId: username };
+  // console.log(userRole, userAttrs);
+
+  // let userJson = { userId: username, userRole };
 
   try {
-    let accessToken = jwt.sign(userJson, '123456789', {
+    let accessToken = jwt.sign(userData, '123456789', {
       expiresIn: '30m'
     });
 
-    let refreshToken = jwt.sign(userJson, process.env.REFRESH_TOKEN_SECRET);
+    let refreshToken = jwt.sign(userData, process.env.REFRESH_TOKEN_SECRET);
 
-    res.json({ accessToken, refreshToken, userRole });
+    res.json({ accessToken, refreshToken, userData });
   } catch (error) {
     console.error('Error signing the token:', error);
     res.status(500).json({ error: 'Internal server error' });

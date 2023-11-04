@@ -1,7 +1,7 @@
 import axios from 'axios';
 import React, { useState, useEffect } from 'react';
 
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 
 const Register = () => {
   let [userData, setUserData] = useState({
@@ -12,6 +12,8 @@ const Register = () => {
     dob: '27-03-2003'
   });
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+
   const Uid = searchParams.get('id');
 
   useEffect(() => {
@@ -20,7 +22,7 @@ const Register = () => {
       console.log(response.data);
       setUserData(response.data);
     };
-    // if (Uid) reqToAxios();
+    if (Uid) reqToAxios();
   }, []);
 
   const changeHandle = (e) => {
@@ -36,15 +38,15 @@ const Register = () => {
   const submitHandle = (e) => {
     e.preventDefault();
     console.log(userData);
-    axios.post('http://localhost:3000/api/auth/registerUser', userData);
+    axios.post('http://localhost:3000/api/auth/registerUser', userData).then((res) => {
+      console.log(res);
+      if (res.status == 200) {
+        navigate('/login');
+      }
+    });
   };
 
   return (
-    // <div className=" flex  ">
-
-    //
-    // </div>
-
     <section data-theme="dark">
       <div className="lg:grid lg:min-h-screen lg:grid-cols-12">
         <aside className="relative block h-16 lg:order-last lg:col-span-5 lg:h-full xl:col-span-6">
@@ -56,7 +58,7 @@ const Register = () => {
         </aside>
 
         <main className="flex flex-col   justify-center relative bottom-14 px-8 py-8 sm:px-12 lg:col-span-7 lg:px-16 lg:py-12 xl:col-span-6 ">
-          <form>
+          <form onSubmit={submitHandle}>
             <a className="block">
               <span className="sr-only">Home</span>
               <svg className="h-8 sm:h-10" viewBox="0 0 28 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -144,7 +146,7 @@ const Register = () => {
                       className="block w-8/12 py-2.5 px-0  text-sm  bg-transparent border-0 border-b-2 border-gray-300 appearance-none  dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer "
                       value={userData.dob}
                       onChange={changeHandle}
-                      disabled="false"
+                      disabled
                     />
                   </div>
                 </div>
@@ -217,7 +219,7 @@ const Register = () => {
                   </div>
                 </div>
               </div>
-              <div class="btn m-4 w-10/12 bg-neutral">Register</div>
+              <input type="submit" className="btn glass m-4 w-10/12 bg-neutral" value="Register" />
             </div>
           </form>
         </main>
