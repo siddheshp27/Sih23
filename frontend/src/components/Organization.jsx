@@ -28,9 +28,9 @@ export default function Organization() {
     test();
   }, []);
 
-  const cards = certificates.map(({ certificateData: { certTitle, eventTitle } }, index) => {
-    console.log(certTitle, eventTitle);
-    return <Card title={certTitle} eventTitle={eventTitle} key={index} certId={index} setSelectedCert={setSelectedCert} />;
+  const cards = certificates.map(({ certificateData: { certTitle, eventTitle }, certificateId }, index) => {
+    console.log(certTitle, eventTitle, certificateId);
+    return <Card title={certTitle} eventTitle={eventTitle} key={certificateId} certId={certificateId} setSelectedCert={setSelectedCert} />;
   });
   console.log(cards);
 
@@ -70,10 +70,36 @@ function Card({ title, eventTitle, certId, setSelectedCert }) {
 }
 
 function Modal({ id }) {
+  const [data, setData] = useState({ id: id, userName: '' });
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setData((prev) => {
+      return { ...prev, [name]: value, id: id };
+    });
+    console.log(data);
+  };
+
+  const handleAssign = async (e) => {
+    e.preventDefault();
+    const accessToken = sessionStorage.getItem('acT'); // Assuming 'rfT' holds the access token
+    // Set the token in the Authorization header as "Bearer YOUR_TOKEN"
+    const headers = { Authorization: `Bearer ${accessToken}` };
+    console.log(data);
+    const res = await axios({
+      method: 'post',
+      headers: headers,
+      url: 'http://localhost:3000/api/organization/assignCert',
+      data
+    });
+
+    console.log(res);
+  };
+
   return (
     <dialog id="my_modal_5" className="modal modal-bottom sm:modal-middle">
       <div className="modal-box">
-        <h3 className="font-bold text-md">Assign Certificate with ID : {id} !</h3>
+        <h3 className="font-bold text-md">Assign Certificate with ID :</h3>
+        <code className="bg-gray-500 p-1 my-2 rounded-md">{id}</code>
         <p className="py-4">
           <label
             htmlFor="Username"
@@ -82,8 +108,11 @@ function Modal({ id }) {
             <input
               type="text"
               id="Username"
+              name="userName"
               className="peer border-none bg-transparent placeholder-transparent focus:border-transparent focus:outline-none focus:ring-0"
               placeholder="Username"
+              value={data.userName}
+              onChange={handleChange}
             />
 
             <span className="pointer-events-none absolute bg-base-100 start-2.5 top-0 -translate-y-1/2  p-0.5 text-xs  transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-sm peer-focus:top-0 peer-focus:text-xs">
@@ -93,7 +122,7 @@ function Modal({ id }) {
         </p>
         <div className="flex justify-between">
           <div className="modal-action">
-            <form>
+            <form onSubmit={handleAssign}>
               <input type="submit" className="btn" value="Assign" />
             </form>
           </div>

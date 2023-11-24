@@ -112,26 +112,6 @@ class certificateContract extends Contract {
     }
   }
 
-  async assignCertificate(ctx, userId) {
-    const clientId = ctx.clientIdentity.getID().split('::')[1].split('/')[4].split('=')[1];
-
-    const role = ctx.clientIdentity.getAttributeValue('role').toString();
-    const { certificateId, certificateData } = JSON.parse(data);
-
-    if (role === 'organization') {
-      // const creator = ctx.stub.getCreator();
-      // console.log(`creator : ${creator}`);
-      let certData = {
-        admin: clientId,
-        certificateId,
-        certificateData
-      };
-      const fieldsComposite = [clientId, certificateId];
-      const compositekey = ctx.stub.createCompositeKey('certificate', fieldsComposite);
-      await ctx.stub.putState(compositekey, Buffer.from(JSON.stringify(certData)));
-    }
-  }
-
   async genCertificate(ctx, data) {
     const clientId = ctx.clientIdentity.getID().split('::')[1].split('/')[4].split('=')[1];
 
@@ -160,6 +140,36 @@ class certificateContract extends Contract {
       // const creator = ctx.stub.getCreator();
       // console.log(creator.idBytes.toString());
       const iterator = await ctx.stub.getStateByPartialCompositeKey('certificate', [clientId]);
+      const certificates = await this.getIteratorData(iterator);
+
+      return JSON.stringify(certificates);
+    }
+  }
+
+  async assignCertificate(ctx, userId, certificateNumber, certificateId) {
+    const clientId = ctx.clientIdentity.getID().split('::')[1].split('/')[4].split('=')[1];
+    const fieldsComposite = [clientId, certificateId];
+    const compositeKey = ctx.stub.createCompositeKey('certificate', fieldsComposite);
+    const certificate = await ctx.stub.getState(compositeKey);
+    const role = ctx.clientIdentity.getAttributeValue('role').toString();
+    console.log(certificate);
+
+    if (role === 'organization' && certificate) {
+      let certData = {
+        certificateId
+      };
+      const fieldsComposite = [userId, certificateNumber];
+      const compositekey = ctx.stub.createCompositeKey('usercertificate', fieldsComposite);
+      await ctx.stub.putState(compositekey, Buffer.from(JSON.stringify(certData)));
+    }
+  }
+
+  async getCertificatesByUser(ctx) {
+    const role = ctx.clientIdentity.getAttributeValue('role').toString();
+    const clientId = ctx.clientIdentity.getID().split('::')[1].split('/')[4].split('=')[1];
+
+    if (role === 'organization') {
+      const iterator = await ctx.stub.getStateByPartialCompositeKey('usercertificate', [clientId]);
       const certificates = await this.getIteratorData(iterator);
 
       return JSON.stringify(certificates);

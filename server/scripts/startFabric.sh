@@ -7,6 +7,8 @@
 # Exit on first error
 set -e
 
+./networkDown.sh
+
 # don't rewrite paths for Windows Git Bash users
 export MSYS_NO_PATHCONV=1
 starttime=$(date +%s)

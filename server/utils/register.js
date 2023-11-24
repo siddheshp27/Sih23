@@ -9,6 +9,7 @@ async function registerUser(data) {
     const ccpPath = path.resolve(
       __dirname,
       '..',
+      '..',
       'fabric-samples',
       'test-network',
       'organizations',

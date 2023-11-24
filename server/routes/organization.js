@@ -10,6 +10,7 @@ dotenv.config();
 const getAccList = require('../getAccList');
 const getAllCerts = require('../utils/getCertificates');
 const { generateRandomUID } = require('../utils/cryptoTools');
+const assignCert = require('../utils/assignCert');
 //////////////////////////////
 
 const authMiddleware = (req, res, next) => {
@@ -43,14 +44,32 @@ router.post('/getCertificates', authMiddleware, async (req, res) => {
   res.status(200).json(response);
 });
 
-router.get('/accessList', authMiddleware, async (req, res) => {
-  res.json(getAccList());
+router.post('/assignCert', authMiddleware, async (req, res) => {
+  const { id: certificateId, userName: userId } = req.body;
+  let user = await userUtils.getUserById(userId);
+  if (user) {
+    const orgId = req.user.userName;
+    const certificateNumber = generateRandomUID();
+    console.log(orgId, certificateNumber, userId, certificateId);
+
+    const response = assignCert({ orgId, certificateNumber, userId, certificateId });
+    res.status(200).json(response);
+  } else {
+    res.status(200).json({ error: `User with Id : ${userId} does not exists` });
+  }
+});
+router.post('/getMyCert', authMiddleware, async (req, res) => {
+  const { id: certificateId, userName: userId } = req.body;
+  const orgId = req.user.userName;
+  const certificateNumber = generateRandomUID();
+  console.log(orgId, certificateNumber, userId, certificateId);
+
+  const response = assignCert({ orgId, certificateNumber, userId, certificateId });
+  res.status(200).json(response);
 });
 
-router.post('/assignCert', authMiddleware, async (req, res) => {
-  const userId = req.body.userId;
-  const uId = req.body.uId;
-  const certId = req.body.certId;
+router.get('/accessList', authMiddleware, async (req, res) => {
+  res.json(getAccList());
 });
 
 //get-doctor-list

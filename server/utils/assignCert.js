@@ -1,11 +1,10 @@
 const { gatewayConnection } = require('./gatewayConnection');
 
-async function genCert({ orgId, certificateId, certificateData }) {
+async function assignCert({ orgId, userId, certificateId, certificateNumber }) {
   try {
     const { gateway, contract } = await gatewayConnection(orgId);
     // const encryptedCertificateData = encryptData(JSON.stringify(certData));
-    const allData = { certificateId, certificateData };
-    const res = await contract.submitTransaction('genCertificate', JSON.stringify(allData));
+    const res = await contract.submitTransaction('assignCertificate', userId, certificateNumber, certificateId);
     await gateway.disconnect();
     return { success: res };
   } catch (error) {
@@ -13,4 +12,4 @@ async function genCert({ orgId, certificateId, certificateData }) {
     return { error };
   }
 }
-module.exports = genCert;
+module.exports = assignCert;

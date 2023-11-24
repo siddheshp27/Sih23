@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const registerUser = require('../register');
+const registerUser = require('../utils/register');
 const updateUserAttributes = require('../editUser');
 const userUtils = require('../user');
 const jwt = require('jsonwebtoken');
