@@ -13,6 +13,9 @@ import Register from './components/userRegistration';
 import User from './components/User';
 import GenrateCertificate from './components/GenerateCertificate';
 
+import QRNew from './components/QRNew';
+import QRReader from './components/QRReader';
+
 function App() {
   const { loggedUserData } = useContext(ClientContext);
   const [userData, setUserData] = useState({});
@@ -42,6 +45,8 @@ function App() {
       <UserContext.Provider value={{ userData, setUserData }}>
         <Routes>
           <Route path="/" element={<Home />}></Route>
+          <Route path="/qrcode" element={<QRNew valueFromAbove="https://google.com" />} />
+          <Route path="/reader" element={<QRReader />} />
           <Route path="/admin" element={<Admin />}></Route>
           <Route path="/organization" element={<Organization />}></Route>
           <Route path="/user" element={<User />}></Route>
