@@ -27,4 +27,10 @@ function decryptData(encryptedData, iv) {
   return decrypted;
 }
 
-module.exports = { encryptData, decryptData };
+const generateRandomUID = () => {
+  const buffer = crypto.randomBytes(16);
+  const uid = buffer.toString('hex');
+  return uid;
+};
+
+module.exports = { encryptData, decryptData, generateRandomUID };

@@ -32,6 +32,7 @@ const Login = () => {
     const res = await axios.post('http://localhost:3000/api/auth/login', lgData);
     const userData = res.data.userData;
     const data = res.data;
+    console.log(data);
     if (!data.error) {
       console.log(data);
       sessionStorage.setItem('acT', data.accessToken);

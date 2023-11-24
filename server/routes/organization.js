@@ -1,22 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const userUtils = require('../user');
-// const { authMiddleware } = require('../routes');
-// const invokeDiagnosis = require('../invokeDiagnosis');
-// const getDoctorAccessList = require('../queryDoctorAccessList');
 const jwt = require('jsonwebtoken');
 
 //new
-const { Gateway, Wallets } = require('fabric-network');
-const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
-const { encryptData } = require('../cryptoTools');
-const genCert = require('../generateCert');
+const genCert = require('../utils/generateCert');
 const dotenv = require('dotenv');
 dotenv.config();
-///////////////////////////////
 const getAccList = require('../getAccList');
+const getAllCerts = require('../utils/getCertificates');
+const { generateRandomUID } = require('../utils/cryptoTools');
 //////////////////////////////
 
 const authMiddleware = (req, res, next) => {
@@ -25,7 +18,7 @@ const authMiddleware = (req, res, next) => {
   if (!token) {
     return res.sendStatus(401); // unauthorized
   }
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, data) => {
+  jwt.verify(token, '123456789', (err, data) => {
     if (err) {
       return res.sendStatus(403); // forbidden
     }
@@ -34,22 +27,20 @@ const authMiddleware = (req, res, next) => {
   });
 };
 
-const isAdmin = async (req, res, next) => {
-  const userRole = await userUtils.getUserRole(req.user.userId);
-  if (userRole === 'admin') {
-    next();
-  } else {
-    res.status(403).send();
-  }
-};
-
 router.post('/genCert', authMiddleware, async (req, res) => {
-  let certData = {};
-  let certUid = 'abcd';
-  let certExpTime = '';
-  let orgId = '1';
-  //add certificate logic
-  genCert(orgId, certUid, certData, certExpTime);
+  const certificateData = req.body;
+  const orgId = req.user.userName;
+  const certificateId = generateRandomUID();
+  console.log(certificateData, orgId, certificateId);
+
+  const response = genCert({ orgId, certificateId, certificateData });
+  res.status(200).json(response);
+});
+
+router.post('/getCertificates', authMiddleware, async (req, res) => {
+  const org = req.user.userName;
+  const response = await getAllCerts({ orgId: org });
+  res.status(200).json(response);
 });
 
 router.get('/accessList', authMiddleware, async (req, res) => {

@@ -24,17 +24,20 @@ const authMiddleware = (req, res, next) => {
       console.log(token);
       return res.json({ err }); // forbidden
     }
+    console.log();
     req.user = data;
+    console.log('verified');
     next();
   });
 };
 
 const isAdmin = async (req, res, next) => {
-  const userRole = await userUtils.getUserRole(req.user.userId);
+  const userRole = await userUtils.getUserRole(req.user.role);
+  console.log(userRole);
   if (userRole === 'admin') {
     next();
   } else {
-    res.json({ msg: 'hi' });
+    res.status(401).json({ error: 'Admin authorization required' });
   }
 };
 
@@ -246,6 +249,7 @@ router.post('/login', async (req, res) => {
   let password = req.body.password;
   let user = await userUtils.getUserById(username);
   const userRole = await userUtils.getUserRole(username);
+  const userData = {};
 
   if (!user) {
     return res.status(404).json('User Does Not Exists'); // user doesn't exist
@@ -256,6 +260,8 @@ router.post('/login', async (req, res) => {
     if (adminPassword !== password) {
       console.log('incorrect password');
       return res.sendStatus(404);
+    } else {
+      userData.role = 'admin';
     }
   } else {
     const hashedPassword = await userUtils.getUserHashedPassword(username);
@@ -266,7 +272,6 @@ router.post('/login', async (req, res) => {
     }
   }
   const userAttrs = await userUtils.getUserAttrs(username);
-  const userData = {};
   const attrsNeeded = ['role', 'name', 'email', 'photo', 'hf.EnrollmentID'];
   // userAttrs.forEach((obj) => {});
   for (obj of userAttrs) {

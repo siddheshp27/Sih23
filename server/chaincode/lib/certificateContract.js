@@ -1,10 +1,10 @@
 'use strict';
 
 const { Contract } = require('fabric-contract-api');
-const crypto = require('crypto');
-const { X509Identity } = require('fabric-shim');
-const util = require('util');
-const { access } = require('fs');
+// const crypto = require('crypto');
+// const { X509Identity } = require('fabric-shim');
+// const util = require('util');
+// const { access } = require('fs');
 
 class certificateContract extends Contract {
   async initLedger(ctx) {
@@ -63,23 +63,6 @@ class certificateContract extends Contract {
     }
   }
 
-  async getIteratorData(iterator) {
-    let resultArray = [];
-
-    while (true) {
-      let res = await iterator.next();
-      if (res.value && res.value.value.toString()) {
-        const obj = JSON.parse(res.value.value.toString('utf8'));
-        resultArray.push(obj);
-      }
-
-      if (res.done) {
-        await iterator.close();
-        return resultArray;
-      }
-    }
-  }
-
   async getCertificateData(ctx, certId) {
     let biCertData = await ctx.stub.getState(certId);
     let certData = JSON.parse(biCertData.toString());
@@ -129,20 +112,100 @@ class certificateContract extends Contract {
     }
   }
 
-  async genCertificate(ctx, certId, desc, expTime) {
-    //all the certificate related data will be provided in desc
-    let role = ctx.clientIdentity.getAttributeValue('role').toString();
-    let clientId = ctx.clientIdentity.getID().split('::')[1].split('/')[4].split('=')[1];
+  async assignCertificate(ctx, userId) {
+    const clientId = ctx.clientIdentity.getID().split('::')[1].split('/')[4].split('=')[1];
+
+    const role = ctx.clientIdentity.getAttributeValue('role').toString();
+    const { certificateId, certificateData } = JSON.parse(data);
+
     if (role === 'organization') {
+      // const creator = ctx.stub.getCreator();
+      // console.log(`creator : ${creator}`);
       let certData = {
         admin: clientId,
-        desc: desc,
-        expTime: expTime
+        certificateId,
+        certificateData
       };
-      ctx.stub.putState(certId, Buffer.from(JSON.stringify(certData)));
+      const fieldsComposite = [clientId, certificateId];
+      const compositekey = ctx.stub.createCompositeKey('certificate', fieldsComposite);
+      await ctx.stub.putState(compositekey, Buffer.from(JSON.stringify(certData)));
     }
   }
 
+  async genCertificate(ctx, data) {
+    const clientId = ctx.clientIdentity.getID().split('::')[1].split('/')[4].split('=')[1];
+
+    const role = ctx.clientIdentity.getAttributeValue('role').toString();
+    const { certificateId, certificateData } = JSON.parse(data);
+
+    if (role === 'organization') {
+      // const creator = ctx.stub.getCreator();
+      // console.log(`creator : ${creator}`);
+      let certData = {
+        admin: clientId,
+        certificateId,
+        certificateData
+      };
+      const fieldsComposite = [clientId, certificateId];
+      const compositekey = ctx.stub.createCompositeKey('certificate', fieldsComposite);
+      await ctx.stub.putState(compositekey, Buffer.from(JSON.stringify(certData)));
+    }
+  }
+
+  async getCertificatesByOrganization(ctx) {
+    const role = ctx.clientIdentity.getAttributeValue('role').toString();
+    const clientId = ctx.clientIdentity.getID().split('::')[1].split('/')[4].split('=')[1];
+
+    if (role === 'organization') {
+      // const creator = ctx.stub.getCreator();
+      // console.log(creator.idBytes.toString());
+      const iterator = await ctx.stub.getStateByPartialCompositeKey('certificate', [clientId]);
+      const certificates = await this.getIteratorData(iterator);
+
+      return JSON.stringify(certificates);
+    }
+  }
+
+  async getIteratorData(iterator) {
+    let resultArray = [];
+    console.log(iterator);
+    while (true) {
+      let res = await iterator.next();
+      if (res.value && res.value.value.toString()) {
+        const obj = JSON.parse(res.value.value.toString('utf8'));
+        resultArray.push(obj);
+      }
+
+      if (res.done) {
+        await iterator.close();
+        return resultArray;
+      }
+    }
+  }
+
+  // async getCertificates(ctx) {
+  //   const userId = ctx.clientIdentity.getID().split('::')[1].split('/')[4].split('=')[1];
+  //   const role = ctx.clientIdentity.getAttributeValue('role').toString();
+  //   // console.log();
+  //   if (role === 'organization') {
+  //     let iteratorAllCertsIds = await ctx.stub.getHistoryForKey(userId);
+  //     let certIds = await this.getIteratorData(iteratorAllCertsIds);
+
+  //     console.log(certIds[0]);
+  //     const allCerts = {};
+
+  //     certIds.forEach(async (id) => {
+  //       console.log(id);
+  //       const res = await ctx.stub.getState(id);
+  //       const data = await res.toString();
+  //       console.log(data);
+  //       allCerts[id] = data;
+  //     });
+  //     return JSON.stringify(allCerts);
+  //   }
+  // }
+
+  // {
   // async writeData(ctx, patientId, data) {
   // 	let patientData = JSON.parse(data);
   // 	await ctx.stub.putState(patientId, Buffer.from(JSON.stringify(patientData)));
@@ -160,6 +223,49 @@ class certificateContract extends Contract {
   // 	let iterator = await ctx.stub.getHistoryForKey(patientId);
   // 	let result = await this.getIteratorData(iterator);
   // 	return JSON.stringify(result);
+  // }
+
+  // async getCertificatesByOrganization(ctx) {
+  // const userId = ctx.clientIdentity.getID().split('::')[1].split('/')[4].split('=')[1];
+  //   const role = ctx.clientIdentity.getAttributeValue('role').toString();
+
+  //   if (role === 'organization') {
+  //     const orgMSPID = ctx.clientIdentity.getMSPID();
+  //     const queryString = {
+  //       selector: {
+  //         _id: {
+  //           $regex: `^\\u0000certificate\\u0000${orgMSPID}\\u0000.*`
+  //         }
+  //       }
+  //     };
+  //     // const queryString = { selector: { orgMSPID } };
+  //     const iterator = await ctx.stub.getQueryResult(JSON.stringify(queryString));
+  //     // console.log(iterator);
+  //     const certificates = await this.getIteratorData(iterator);
+  //     return JSON.stringify(certificates);
+  //     // return { iterator };
+  //   }
+  // }
+
+  //   async getIteratorData(iterator) {
+  //   //   let resultArray = [];
+
+  //   //   // Extract the result array from the wrapped iterator
+  //   //   console.log(iterator);
+  //   //   console.log('=========================================================================');
+  //   //   console.log(iterator.response);
+  //   //   const { array } = iterator.response;
+
+  //   //   for (let i = 0; i < array.length; i++) {
+  //   //     if (array[i].length > 0) {
+  //   //       const obj = JSON.parse(array[i][0].toString('utf8'));
+  //   //       resultArray.push(obj);
+  //   //     }
+  //   //   }
+
+  //   //   return resultArray;
+  //   // }
+
   // }
 }
 

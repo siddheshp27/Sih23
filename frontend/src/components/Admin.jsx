@@ -5,22 +5,22 @@ export default function Admin() {
   const [orgData, setOrgData] = useState({ orgId: '', orgName: '', email: '', password: '', address: '', phoneNumber: '' });
   // console.log(accessToken);
 
-  const register = (e) => {
+  const register = async (e) => {
     e.preventDefault();
-    const accessToken = localStorage.getItem('acT'); // Assuming 'rfT' holds the access token
+    const accessToken = sessionStorage.getItem('acT'); // Assuming 'rfT' holds the access token
     console.log(accessToken);
 
     // Set the token in the Authorization header as "Bearer YOUR_TOKEN"
     const headers = { Authorization: `Bearer ${accessToken}` };
 
-    axios({
+    const res = await axios({
       method: 'post',
       headers: headers,
       url: 'http://localhost:3000/api/auth/registerOrg',
       data: orgData
     });
 
-    console.log(orgData);
+    console.log(res, orgData);
   };
 
   const changeHandle = (e) => {

@@ -2,7 +2,7 @@ const { Gateway, Wallets } = require('fabric-network');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { encryptData } = require('./cryptoTools');
+const { encryptData } = require('./utils/cryptoTools');
 const dotenv = require('dotenv');
 dotenv.config();
 
