@@ -53,7 +53,7 @@ function App() {
           <Route path="/login" element={<Login />}></Route>
           <Route path="/generate" element={<CertificateGenerator formState={formState} dispatch={dispatch} />}></Route>
           <Route path="/generated-certificate" element={<Certificate {...formState} />}></Route>
-          <Route path="/genrateCertificate" element={<GenrateCertificate />}></Route>
+          <Route path="/generateCertificate" element={<GenrateCertificate />}></Route>
           <Route path="/register" element={<Register />}></Route>
         </Routes>
       </UserContext.Provider>
