@@ -15,7 +15,7 @@ export const SoundSection = () => {
       <div className="body">
         <div className="sound-section-content content">
           <p className="text text-center">Blockchain based E-wallet</p>
-          <span className="description">Document Wallet to Empower Citizens</span>
+          <span className="description">Document Wallet to Empower Students</span>
           <ul className="links">
             <li>
               <Link to="/login" className="button">

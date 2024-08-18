@@ -5,6 +5,7 @@ import { Jumbotron } from "./Jumbotron";
 import { SoundSection } from "./SoundSection";
 import WebgiViewer from "./WebgiViewer";
 import Categories from "./Categories";
+import Footer from "./Footer";
 
 const Home = () => {
   const webgiViewerRef = useRef();
@@ -21,6 +22,7 @@ const Home = () => {
         <SoundSection />
         <DisplaySection triggerPreview={handlePreview} />
         <Categories />
+        <Footer/>
       </div>
       <WebgiViewer contentRef={contentRef} ref={webgiViewerRef} />
     </div>

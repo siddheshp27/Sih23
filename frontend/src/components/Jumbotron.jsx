@@ -76,21 +76,8 @@ export const Jumbotron = () => {
         <div className="mx-auto max-w-2xl mt-16 mb-36 sm:py-48 lg:py-32">
           <div className="text-center">
             <h1 className="text-4xl font-bold tracking-tight text-white sm:text-6xl">Your Documents, Anytime, Anywhere</h1>
-            <p className="text-lg leading-8 text-white mt-6">Document Wallet to Empower Citizens</p>
-            {/* <div className="mt-10 flex items-center justify-center gap-x-6">
-              <a
-                href="#"
-                className="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-              >
-                Get started
-              </a>
-              <a
-                href="#"
-                className="text-sm font-semibold leading-6 text-white"
-              >
-                Learn more <span aria-hidden="true">→</span>
-              </a>
-            </div> */}
+            <p className="text-lg leading-8 text-white mt-6">Document Wallet to Empower Students</p>
+           
           </div>
         </div>
         <div
