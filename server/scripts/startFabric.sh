@@ -7,30 +7,41 @@
 # Exit on first error
 set -e
 
-./networkDown.sh
+# Clean up function
+cleanup() {
+    echo "Cleaning up..."
+    ./networkDown.sh
+    rm -rf wallet/*
+}
+
+# Set up trap to call cleanup function on script exit
+trap cleanup EXIT
 
 # don't rewrite paths for Windows Git Bash users
 export MSYS_NO_PATHCONV=1
+
 starttime=$(date +%s)
 
+# Use absolute paths
+SCRIPT_DIR="/mnt/e/Sem7/cer_gen/server/scripts"
+FABRIC_SAMPLES_DIR="/mnt/e/Sem7/cer_gen/fabric-samples"
+SERVER_DIR="/mnt/e/Sem7/cer_gen/server"
 
-# clean out any old identites in the wallets
-rm -rf wallet/*
+# clean out any old identities in the wallets
+rm -rf "${SCRIPT_DIR}/wallet"/*
 
-# CC_SRC_PATH="../chaincode/"
-CC_SRC_PATH="../../server/chaincode/"
+# Set chaincode source path
+CC_SRC_PATH="${SERVER_DIR}/chaincode"
 
 # launch network; create channel and join peer to channel
-pushd ../../fabric-samples/test-network
+pushd "${FABRIC_SAMPLES_DIR}/test-network"
 ./network.sh down
 ./network.sh up createChannel -ca -s couchdb
-./network.sh deployCC -ccn certificateContract -cci initLedger -ccl javascript -ccp ${CC_SRC_PATH}
+./network.sh deployCC -ccn certificateContract -cci initLedger -ccl javascript -ccp "${CC_SRC_PATH}"
 popd
 
-node ../enrollAdmin.js
-cat <<EOF
+# Enroll admin
+node "${SERVER_DIR}/enrollAdmin.js"
 
-Total setup execution time : $(($(date +%s) - starttime)) secs ...
-
-
-EOF
+# Print execution time
+echo "Total setup execution time : $(($(date +%s) - starttime)) secs ..."
