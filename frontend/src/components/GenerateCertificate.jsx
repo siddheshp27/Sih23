@@ -50,19 +50,19 @@ export default function GenrateCertificate() {
     };
 
     console.log(requestData);
-    // const accessToken = sessionStorage.getItem('acT'); // Assuming 'rfT' holds the access token
+    const accessToken = sessionStorage.getItem('acT'); // Assuming 'rfT' holds the access token
 
-    // // Set the token in the Authorization header as "Bearer YOUR_TOKEN"
-    // const headers = { Authorization: `Bearer ${accessToken}` };
+    // Set the token in the Authorization header as "Bearer YOUR_TOKEN"
+    const headers = { Authorization: `Bearer ${accessToken}` };
 
-    // const res = await axios({
-    //   method: 'post',
-    //   headers: headers,
-    //   url: 'http://localhost:3000/api/organization/genCert',
-    //   data: requestData
-    // });
+    const res = await axios({
+      method: 'post',
+      headers: headers,
+      url: 'http://localhost:3000/api/organization/genCert',
+      data: requestData
+    });
 
-    // console.log(res);
+    console.log(res);
   };
 
   return (

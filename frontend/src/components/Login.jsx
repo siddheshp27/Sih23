@@ -115,7 +115,10 @@ const Login = () => {
             <form onSubmit={registerApi}>
               <div className="col-span-4 flex items-center flex-row justify-start">
                 <p className="mt-4 text-sm text-gray-500 sm:mt-0">Don't have an account?</p>
-                <button className="ml-2 text-sm text-gray-700 underline">Register via Digilocker</button>.
+                <button className="ml-2 text-sm text-gray-700 underline">
+                  <a href='https://accounts.digitallocker.gov.in/oauth_partner/register/%252Foauth2%252F1%252Fconsent%253Flogo%253D1682679499_setulogooneline.png%2526response_type%253Dcode%2526client_id%253D5FF85A83%2526state%253D94c34e64-44aa-4164-8887-e12da7df1a35%252521L2U3MzM2NzhlLWFkMjUtNDI4Ni1hZjIzLTBlZjczOGI1NjRkOS8%25253D%2526redirect_uri%253Dhttps%25253A%25252F%25252Fdg-sandbox.setu.co%25252Fapi%25252Fdigilocker%25252Fcallback%2526code_challenge%253DFgYIAFKU6TWG8o2yx6iq9p1Z3cWcwvVdvsRlCDNp1Lo%2526code_challenge_method%253DS256%2526scope%253Dopenid%2526orgid%253D003533%2526txn%253D6704d5c79e1eaoauth21728370119%2526hashkey%253D10110df471d53367df7f1bd754ea0960d202f2e5808c39409ed125a138441705%2526requst_pdf%253DN%2526app_name%253DU2V0dSBTYW5kYm94IEFwcA%25253D%25253D%2526signup%253Dsignup'>
+                    Register via Digilocker
+                  </a></button>.
               </div>
             </form>
           </div>
