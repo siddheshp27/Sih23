@@ -4,30 +4,27 @@ const userUtils = require('./user');
 const registerDefaultUser = async () => {
   console.log('Register User!!!');
 
-  let userName = '8799';
-  let name = 'Siddhesh';
-  let email = 'sid@vit.edu';
-  let dob = '20';
-  let photo = 'url';
+  let userName = '12121212';
+  let name = 'Aryan';
+  let email = 'aryan@vit.edu';
+  let dob = '08-12-2003';
   let gender = 'M';
-  let password = 'test';
+  let password = '12345678';
   let hashedPassword = await userUtils.encryptPassword(password);
-  let phoneNumber = '775';
+  let phoneNumber = '7755658585';
 
-  const regResponse = await registerUser({ userName, name, email, gender, role: 'user', dob, photo, hashedPassword, phoneNumber });
+  const regResponse = await registerUser({ userName, name, email, gender, role: 'user', dob, hashedPassword, phoneNumber });
   console.log(regResponse);
 
   console.log('Register Org!!!!');
 
-  let orgId = 'vit';
+  let orgId = '1234567';
   let orgName = 'vit';
   password = 'test';
   hashedPassword = await userUtils.encryptPassword(password);
-  let address = '';
   email = 'a@vit.edu';
-  phoneNumber = '885';
 
-  await registerUser({ orgId, orgName, email, role: 'organization', hashedPassword, address, phoneNumber });
+  await registerUser({ orgId, orgName, email, role: 'organization', hashedPassword });
 };
 
 registerDefaultUser();

@@ -18,17 +18,21 @@ async function registerUser(data) {
       'connection-org1.json'
     );
     const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
-
+    console.log(ccp);
     // Create a new CA client for interacting with the CA.
     const caURL = ccp.certificateAuthorities['ca.org1.example.com'].url;
+    console.log(caURL);
     const ca = new FabricCAServices(caURL);
+    
 
     // Create a new file system based wallet for managing identities.
     const walletPath = path.join(process.cwd(), 'wallet');
+    console.log(walletPath)
     const wallet = await Wallets.newFileSystemWallet(walletPath);
 
     // Check to see if we've already enrolled the user.
     const userIdentity = await wallet.get(data.orgId);
+    console.log(userIdentity)
     if (userIdentity) {
       console.log(`An identity for the user ${data.orgId} already exists in the wallet`);
       return `An identity for the user ${data.orgId} already exists in the wallet`;
@@ -36,6 +40,7 @@ async function registerUser(data) {
 
     // Check to see if we've already enrolled the admin user.
     const adminIdentity = await wallet.get('admin');
+    console.log(adminIdentity)
     if (!adminIdentity) {
       console.log('An identity for the admin user "admin" does not exist in the wallet');
       console.log('Run the enrollAdmin.js application before retrying');
@@ -45,7 +50,7 @@ async function registerUser(data) {
     // build a user dataect for authenticating with the CA
     const provider = wallet.getProviderRegistry().getProvider(adminIdentity.type);
     const adminUser = await provider.getUserContext(adminIdentity, 'admin');
-
+    console.log(adminUser)
     // Register the user, enroll the user, and import the new identity into the wallet.
     let attrs;
     if (data.role === 'organization')
@@ -53,6 +58,11 @@ async function registerUser(data) {
         {
           name: 'role',
           value: data.role,
+          ecert: true
+        },
+        {
+          name: 'username',
+          value: data.orgId,
           ecert: true
         },
         {
@@ -69,17 +79,6 @@ async function registerUser(data) {
           name: 'hashedPassword',
           value: data.hashedPassword,
           ecert: true
-        },
-
-        {
-          name: 'address',
-          value: data.address,
-          ecert: true
-        },
-        {
-          name: 'phoneNumber',
-          value: data.phoneNumber,
-          ecert: true
         }
       ];
     else if (data.role === 'user') {
@@ -90,6 +89,11 @@ async function registerUser(data) {
           ecert: true
         },
         {
+          name: 'username',
+          value: data.userName,
+          ecert: true
+        },
+        {
           name: 'name',
           value: data.name,
           ecert: true
@@ -97,11 +101,6 @@ async function registerUser(data) {
         {
           name: 'email',
           value: data.email,
-          ecert: true
-        },
-        {
-          name: 'photo',
-          value: data.photo,
           ecert: true
         },
         {
@@ -123,13 +122,19 @@ async function registerUser(data) {
           name: 'phoneNumber',
           value: data.phoneNumber,
           ecert: true
+        },
+        {
+          name: 'dID',
+          value: data.dID,
+          ecert: true
         }
       ];
     } else {
       return `Invalid Role : ${data.role}`;
     }
+    console.log(attrs)
     let userId = data.role === 'organization' ? data.orgId : data.userName;
-    console.log(data, data.role, userId);
+    console.log(data, data.role, userId, data.dID);
 
     const secret = await ca.register(
       {
@@ -140,6 +145,7 @@ async function registerUser(data) {
       },
       adminUser
     );
+    console.log(secret)
     const enrollment = await ca.enroll({
       enrollmentID: userId,
       enrollmentSecret: secret

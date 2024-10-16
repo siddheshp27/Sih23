@@ -7,16 +7,6 @@
 # Exit on first error
 set -e
 
-# Clean up function
-cleanup() {
-    echo "Cleaning up..."
-    ./networkDown.sh
-    rm -rf wallet/*
-}
-
-# Set up trap to call cleanup function on script exit
-trap cleanup EXIT
-
 # don't rewrite paths for Windows Git Bash users
 export MSYS_NO_PATHCONV=1
 

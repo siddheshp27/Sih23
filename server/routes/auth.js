@@ -73,96 +73,69 @@ const isAdmin = async (req, res, next) => {
 }
 
 async function setuReq(purpose, obj) {
-  const headers = [
-    {
-      'x-client-id': process.env.CLIENT_ID
-    },
-    {
-      'x-client-secret': process.env.CLIENT_SECRET
-    },
-    {
-      'x-product-instance-id': process.env.PRODUCT_ID
-    }
-  ];
-  let data;
+  // Define headers as a single object
+  const headers = {
+    'x-client-id': process.env.CLIENT_ID,
+    'x-client-secret': process.env.CLIENT_SECRET,
+    'x-product-instance-id': process.env.PRODUCT_ID
+  };
 
+  let data, url, method;
+
+  // Handle different purposes for the API request
   if (purpose === 'getAadhar') {
-    data = {
-      requestObj: {
-        parameters: {
-          path: [{ requestId: obj.dId }],
-          header: headers
-        }
-      },
-      url: 'https://dg-sandbox.setu.co/api/digilocker/{requestId}/aadhaar',
-      requestBooleanData: { header: true, path: true, query: false, body: false },
-      method: 'get'
-    };
+    url = `https://dg-sandbox.setu.co/api/digilocker/${obj.dId}/aadhaar`;
+    method = 'get';
+    data = null; // GET requests don't require body data
   } else if (purpose === 'register') {
-    data = JSON.stringify({
-      requestObj: {
-        parameters: {
-          header: headers
-        },
-        body: { redirectUrl: obj.redirectUrl }
-      },
-      url: 'https://dg-sandbox.setu.co/api/digilocker',
-      requestBooleanData: {
-        header: true,
-        path: false,
-        query: false,
-        body: true
-      },
-      method: 'post'
-    });
-  } else if (purpose === 'doc') {
+    url = 'https://dg-sandbox.setu.co/api/digilocker';
+    method = 'post';
     data = {
-      requestObj: {
-        parameters: {
-          path: [
-            {
-              requestId: obj.dId
-            }
-          ],
-          header: headers
-        },
-        body: {
-          docType: obj.doc,
-          format: obj.docFormat,
-          consent: 'Y'
-        }
-      },
-      url: 'https://dg-sandbox.setu.co/api/digilocker/{requestId}/document',
-      requestBooleanData: {
-        header: true,
-        path: true,
-        query: false,
-        body: true
-      },
-      method: 'post'
+      redirectUrl: obj.redirectUrl
+    };
+  } else if (purpose === 'doc') {
+    url = `https://dg-sandbox.setu.co/api/digilocker/${obj.dId}/document`;
+    method = 'post';
+    data = {
+      docType: obj.doc,
+      format: obj.docFormat,
+      consent: 'Y'
     };
   }
 
+  // Axios request configuration
   let config = {
-    method: 'post',
+    method: method,
     maxBodyLength: Infinity,
-    url: 'https://api-playground.setu.co/api/product-api',
+    url: url,
     headers: {
+      ...headers, // Spread the headers object
       'Content-Type': 'application/json'
     },
-    data: data
+    // Only pass 'data' if it's a POST request
+    data: method === 'post' ? data : undefined
   };
 
-  const response = await axios.request(config);
-  // console.log(JSON.stringify(response.data));
-  return response.data;
+  try {
+    const response = await axios.request(config);
+    return response.data;
+  } catch (error) {
+    console.error(`Error in ${purpose} request:`, error.response ? error.response.data : error.message);
+    throw error; // Re-throw to handle it higher up
+  }
 }
 
-router.post('/initiateRegisterUser', async (req, res) => {
-  const redirectUrl = 'http://localhost:5173/register';
 
-  const response = await setuReq('register', { redirectUrl });
-  res.json(response);
+// Route to initiate user registration
+router.post('/initiateRegisterUser', async (req, res) => {
+  const redirectUrl = 'http://localhost:3000/register';
+
+  try {
+    const response = await setuReq('register', { redirectUrl });
+    res.json(response);
+  } catch (error) {
+    res.status(500).json({ error: 'Registration initiation failed' });
+  }
 });
 
 router.post('/getAadhar', async (req, res) => {
@@ -171,10 +144,9 @@ router.post('/getAadhar', async (req, res) => {
   const details = response.aadhaar;
   const aId = details.maskedNumber;
   const userName = aId.substring(aId.length - 4);
-  const buffer = Buffer.from(details.photo, 'base64');
-  const photo = await uploadToS3(userName + 'pp', buffer);
+  // const buffer = Buffer.from(details.photo, 'base64');
+  // const photo = await uploadToS3(userName + 'pp', buffer);
   const resp = {
-    photo,
     name: details.name,
     userName,
     gender: details.gender,
@@ -186,24 +158,36 @@ router.post('/getAadhar', async (req, res) => {
 });
 
 router.post('/getDocument', async (req, res) => {
-  const doc = req.body.doc;
-  const docFormat = req.body.docFormat;
-  const dId = req.body.dId;
-  const response = await setuReq('doc', { doc, docFormat, dId });
-  res.json(response.data);
+  try {
+    const { doc, docFormat, dId } = req.body;
+    const response = await setuReq('doc', { doc, docFormat, dId });
+    res.json(response); // Return the full response
+  } catch (error) {
+    console.error('Error fetching document:', error.message);
+    res.status(500).json({ error: 'Failed to fetch document' });
+  }
 });
 
+router.post('/getDocumentPan', async (req, res) => {
+  try {
+    const { doc, docFormat, dId } = req.body;
+    const response = await setuReq('doc', { doc, docFormat, dId });
+    res.json(response); // Return the full response
+  } catch (error) {
+    console.error('Error fetching document:', error.message);
+    res.status(500).json({ error: 'Failed to fetch document' });
+  }
+});
+
+router
 router.post('/registerOrg', authMiddleware, isAdmin, async (req, res) => {
   console.log('Register Org!!!!');
   console.log(req.body);
 
-  let orgId = req.body.orgId;
-  let orgName = req.body.orgName;
-  let password = req.body.password;
-  let hashedPassword = await userUtils.encryptPassword(password);
-  let address = req.body.address;
+  let orgId = req.body.userId;
+  let orgName = req.body.name;
+  let hashedPassword = req.body.hashedPassword;
   let email = req.body.email;
-  let phoneNumber = req.body.phoneNumber;
 
   let user = await userUtils.getUserById(orgId);
 
@@ -211,29 +195,41 @@ router.post('/registerOrg', authMiddleware, isAdmin, async (req, res) => {
     return res.sendStatus(409);
   }
 
-  await registerUser({ orgId, orgName, email, role: 'organization', hashedPassword, address, phoneNumber });
+  try {
+    const result = await registerUser({ orgId, orgName, email, role: 'organization', hashedPassword });
+
+    if (result.success) {
+      console.log(result.success);
+      return res.status(200).send({ message: result.success });
+    } else {
+      console.log(result.error);
+      return res.status(500).send({ error: result.error });
+    }
+  } catch (error) {
+    console.error(`Failed to register organization: ${error}`);
+    return res.status(500).send({ error: `Failed to register organization: ${error.message}` });
+  }
 });
 
 router.post('/registerUser', async (req, res) => {
   console.log('Register User!!!');
 
-  let userName = req.body.userName;
+  let userName = req.body.prn;
   let name = req.body.name;
   let email = req.body.email;
   let dob = req.body.dob;
-  let photo = req.body.photo;
+  let dID = req.body.Uid;
   let gender = req.body.gender;
-  let password = req.body.password;
-  let hashedPassword = await userUtils.encryptPassword(password);
+  let hashedPassword = req.body.password;
   let phoneNumber = req.body.phoneNumber;
 
   let user = await userUtils.getUserById(userName);
-
+  console.log(dID)
   if (user) {
     return res.status(409).json('User Already Exists');
   }
 
-  const regResponse = await registerUser({ userName, name, email, gender, role: 'user', dob, photo, hashedPassword, phoneNumber });
+  const regResponse = await registerUser({ userName, name, email, gender, role: 'user', dob, hashedPassword, phoneNumber, dID });
   if (regResponse.success) {
     res.status(200).json(regResponse);
   } else {
@@ -245,10 +241,11 @@ router.post('/login', async (req, res) => {
   console.log('login');
   console.log(req.body);
 
-  let username = req.body.username;
+  let username = req.body.prn;
   let password = req.body.password;
+  let userRole = req.body.role;
   let user = await userUtils.getUserById(username);
-  const userRole = await userUtils.getUserRole(username);
+  const userRoleExisting = await userUtils.getUserRole(username);
   const userData = {};
 
   if (!user) {
@@ -266,13 +263,13 @@ router.post('/login', async (req, res) => {
   } else {
     const hashedPassword = await userUtils.getUserHashedPassword(username);
     const isPasswordMatch = await userUtils.comparePasswords(password, hashedPassword);
-    console.log('incorrect password');
     if (!isPasswordMatch) {
-      return res.status(207).json({ error: 'Incorrect Password' });
+      return res.status(401).json({ error: 'Incorrect Password' });
     }
+    userData.role = userRole;
   }
   const userAttrs = await userUtils.getUserAttrs(username);
-  const attrsNeeded = ['role', 'name', 'email', 'photo', 'hf.EnrollmentID'];
+  const attrsNeeded = ['role', 'name', 'email','phoneNumber','dID', 'hf.EnrollmentID'];
   // userAttrs.forEach((obj) => {});
   for (obj of userAttrs) {
     // console.log();
@@ -282,10 +279,6 @@ router.post('/login', async (req, res) => {
     }
   }
   console.log(userData);
-
-  // console.log(userRole, userAttrs);
-
-  // let userJson = { userId: username, userRole };
 
   try {
     let accessToken = jwt.sign(userData, '123456789', {
@@ -423,3 +416,5 @@ router.get('/csrf-token', (req, res) => {
 });
 
 module.exports = router;
+
+// 75644100-19b6-4186-9b17-18d3eb452d3c
