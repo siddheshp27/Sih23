@@ -124,17 +124,18 @@ async function registerUser(data) {
           ecert: true
         },
         {
-          name: 'dID',
-          value: data.dID,
+          name: 'photo',
+          value: data.photo,
           ecert: true
-        }
+        },
+
       ];
     } else {
       return `Invalid Role : ${data.role}`;
     }
     console.log(attrs)
     let userId = data.role === 'organization' ? data.orgId : data.userName;
-    console.log(data, data.role, userId, data.dID);
+    console.log(data, data.role, userId);
 
     const secret = await ca.register(
       {

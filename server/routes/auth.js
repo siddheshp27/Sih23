@@ -8,6 +8,7 @@ const axios = require('axios');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const { uploadToS3 } = require('../aws/awsS3');
+const fetchPhotoFromDigiLocker = require('../utils/getPhoto');
 dotenv.config();
 // const { authMiddleware, isAdmin } = require('../routes')
 
@@ -138,6 +139,17 @@ router.post('/initiateRegisterUser', async (req, res) => {
   }
 });
 
+router.post('/getId', async (req, res) => {
+  const redirectUrl = 'http://localhost:3000/user/documents';
+
+  try {
+    const response = await setuReq('register', { redirectUrl });
+    res.json(response);
+  } catch (error) {
+    res.status(500).json({ error: 'Id generation failed' });
+  }
+});
+
 router.post('/getAadhar', async (req, res) => {
   const dId = req.body.dId;
   const response = await setuReq('getAadhar', { dId });
@@ -156,6 +168,8 @@ router.post('/getAadhar', async (req, res) => {
   };
   res.json(resp);
 });
+
+
 
 router.post('/getDocument', async (req, res) => {
   try {
@@ -211,29 +225,51 @@ router.post('/registerOrg', authMiddleware, isAdmin, async (req, res) => {
   }
 });
 
+
 router.post('/registerUser', async (req, res) => {
   console.log('Register User!!!');
 
-  let userName = req.body.prn;
-  let name = req.body.name;
-  let email = req.body.email;
-  let dob = req.body.dob;
-  let dID = req.body.Uid;
-  let gender = req.body.gender;
-  let hashedPassword = req.body.password;
-  let phoneNumber = req.body.phoneNumber;
+  const userName = req.body.prn;
+  const name = req.body.name;
+  const email = req.body.email;
+  const dob = req.body.dob;
+  const gender = req.body.gender;
+  const hashedPassword = req.body.password;
+  const phoneNumber = req.body.phoneNumber;
+  const reqId = req.body.reqId;
 
-  let user = await userUtils.getUserById(userName);
-  console.log(dID)
-  if (user) {
-    return res.status(409).json('User Already Exists');
-  }
+  try {
+    // Check if the user already exists
+    let user = await userUtils.getUserById(userName);
+    if (user) {
+      return res.status(409).json('User Already Exists');
+    }
 
-  const regResponse = await registerUser({ userName, name, email, gender, role: 'user', dob, hashedPassword, phoneNumber, dID });
-  if (regResponse.success) {
-    res.status(200).json(regResponse);
-  } else {
-    res.status(411).json(regResponse);
+    // Fetch photo from DigiLocker API
+    const photo = await fetchPhotoFromDigiLocker(reqId);
+
+    // Register the user with the photo from DigiLocker API
+    const regResponse = await registerUser({ 
+      userName, 
+      name, 
+      email, 
+      gender, 
+      role: 'user', 
+      dob, 
+      hashedPassword, 
+      phoneNumber, 
+      photo 
+    });
+
+    if (regResponse.success) {
+      return res.status(200).json(regResponse);
+    } else {
+      return res.status(411).json(regResponse);
+    }
+
+  } catch (error) {
+    console.error('Error registering user:', error);
+    return res.status(500).json('Error registering user');
   }
 });
 
@@ -269,7 +305,7 @@ router.post('/login', async (req, res) => {
     userData.role = userRole;
   }
   const userAttrs = await userUtils.getUserAttrs(username);
-  const attrsNeeded = ['role', 'name', 'email','phoneNumber','dID', 'hf.EnrollmentID'];
+  const attrsNeeded = ['role', 'name', 'email','photo','phoneNumber', 'hf.EnrollmentID'];
   // userAttrs.forEach((obj) => {});
   for (obj of userAttrs) {
     // console.log();
