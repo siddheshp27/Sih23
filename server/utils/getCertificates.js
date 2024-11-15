@@ -6,7 +6,7 @@ async function getCertificates({ orgId }) {
     const res = await contract.evaluateTransaction('getCertificatesByOrganization');
     const data = JSON.parse(res.toString());
     await gateway.disconnect();
-    return { success: data };
+    return { success:true, data };
   } catch (error) {
     console.error(`Error in invokeDiagnosis: ${error}`);
     return { error };

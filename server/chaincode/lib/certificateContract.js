@@ -37,6 +37,15 @@ class certificateContract extends Contract {
     // }
   }
 
+  async getOrgData(ctx, orgId) {
+    const orgData = await ctx.stub.getState(orgId);
+    if (!orgData || orgData.length === 0) {
+      throw new Error(`The state for organization ${orgId} does not exist`);
+    }
+    console.log(`Retrieved orgData: ${orgData.toString()}`);
+    return orgData.toString();
+  }
+  
   async addCert(ctx, userId, uId, certId) {
     //only the creator of the certificate can add it to persons id
     //all the certinfo will be taken from the desc while accessing
@@ -132,6 +141,50 @@ class certificateContract extends Contract {
     }
   }
 
+  async deleteCertificate(ctx, clientId, certificateId) {
+    const role = ctx.clientIdentity.getAttributeValue('role').toString();
+    const clientIdentity = ctx.clientIdentity.getID().split('::')[1].split('/')[4].split('=')[1];
+
+    if (role === 'organization' || clientIdentity === clientId) {
+      const compositeKey = ctx.stub.createCompositeKey('certificate', [clientId, certificateId]);
+      const certificate = await ctx.stub.getState(compositeKey);
+
+      if (!certificate || certificate.length === 0) {
+        throw new Error(`Certificate ${certificateId} does not exist for client ${clientId}`);
+      }
+
+      await ctx.stub.deleteState(compositeKey);
+      return JSON.stringify({ success: `Certificate ${certificateId} deleted for client ${clientId}` });
+    } else {
+      return JSON.stringify({ error: 'Only admin or the certificate owner can delete the certificate' });
+    }
+  }
+
+  async editCertificate(ctx, clientId, certificateId, newCertificateData) {
+    const role = ctx.clientIdentity.getAttributeValue('role').toString();
+    const clientIdentity = ctx.clientIdentity.getID().split('::')[1].split('/')[4].split('=')[1];
+
+    if (role === 'organization' || clientIdentity === clientId) {
+      const compositeKey = ctx.stub.createCompositeKey('certificate', [clientId, certificateId]);
+      const certificate = await ctx.stub.getState(compositeKey);
+
+      if (!certificate || certificate.length === 0) {
+        throw new Error(`Certificate ${certificateId} does not exist for client ${clientId}`);
+      }
+
+      const updatedCertificate = {
+        ...JSON.parse(certificate.toString()),
+        ...JSON.parse(newCertificateData)
+      };
+
+      await ctx.stub.putState(compositeKey, Buffer.from(JSON.stringify(updatedCertificate)));
+      return JSON.stringify({ success: `Certificate ${certificateId} updated for client ${clientId}` });
+    } else {
+      return JSON.stringify({ error: 'Only admin or the certificate owner can edit the certificate' });
+    }
+  }
+
+
   async getCertificatesByOrganization(ctx) {
     const role = ctx.clientIdentity.getAttributeValue('role').toString();
     const clientId = ctx.clientIdentity.getID().split('::')[1].split('/')[4].split('=')[1];
@@ -146,21 +199,23 @@ class certificateContract extends Contract {
     }
   }
 
-  async assignCertificate(ctx, userId, certificateNumber, certificateId) {
+  async assignCertificate(ctx, userId, certificateId) {
     const clientId = ctx.clientIdentity.getID().split('::')[1].split('/')[4].split('=')[1];
     const fieldsComposite = [clientId, certificateId];
     const compositeKey = ctx.stub.createCompositeKey('certificate', fieldsComposite);
     const certificate = await ctx.stub.getState(compositeKey);
     const role = ctx.clientIdentity.getAttributeValue('role').toString();
     console.log(certificate);
-
+  
     if (role === 'organization' && certificate) {
       let certData = {
         certificateId
       };
-      const fieldsComposite = [userId, certificateNumber];
-      const compositekey = ctx.stub.createCompositeKey('usercertificate', fieldsComposite);
-      await ctx.stub.putState(compositekey, Buffer.from(JSON.stringify(certData)));
+      const userCompositeKey = ctx.stub.createCompositeKey('usercertificate', [userId, certificateId]);
+      await ctx.stub.putState(userCompositeKey, Buffer.from(JSON.stringify(certData)));
+      return JSON.stringify({ success: `Certificate ${certificateId} assigned to user ${userId}` });
+    } else {
+      return JSON.stringify({ error: 'Only organizations can assign certificates or certificate does not exist' });
     }
   }
 
@@ -190,6 +245,29 @@ class certificateContract extends Contract {
         await iterator.close();
         return resultArray;
       }
+    }
+  }
+
+  async assignUserToOrg(ctx, orgId, userId) {
+    const role = ctx.clientIdentity.getAttributeValue('role').toString();
+    const clientId = ctx.clientIdentity.getID().split('::')[1].split('/')[4].split('=')[1];
+
+    if (role === 'organization') {
+      let orgData = await ctx.stub.getState(orgId);
+      let orgUsers = orgData.length ? JSON.parse(orgData.toString()) : [];
+
+      console.log(`Current orgUsers: ${JSON.stringify(orgUsers)}`);
+
+      if (!orgUsers.includes(userId)) {
+        orgUsers.push(userId);
+        await ctx.stub.putState(orgId, Buffer.from(JSON.stringify(orgUsers)));
+        console.log(`Updated orgUsers: ${JSON.stringify(orgUsers)}`);
+        return JSON.stringify({ success: `User ${userId} assigned to organization ${orgId}` });
+      } else {
+        return JSON.stringify({ error: `User ${userId} is already assigned to organization ${orgId}` });
+      }
+    } else {
+      return JSON.stringify({ error: 'Only admin can assign users to organizations' });
     }
   }
 

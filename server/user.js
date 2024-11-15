@@ -3,6 +3,7 @@ const FabricCAServices = require('fabric-ca-client');
 const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
+const { gatewayConnection } = require('./utils/gatewayConnection');
 
 exports.getCaURL = async function () {
   const ccpPath = path.resolve(
@@ -74,7 +75,16 @@ exports.getUserById = async function (userId) {
 
   let user = userList.find((user) => user.id === userId);
 
-  return user;
+  // Extract the required fields from the attrs array
+  const userDetails = {
+    username: user.attrs.find((attr) => attr.name === 'username')?.value,
+    name: user.attrs.find((attr) => attr.name === 'name')?.value,
+    email: user.attrs.find((attr) => attr.name === 'email')?.value,
+    gender: user.attrs.find((attr) => attr.name === 'gender')?.value,
+    photo: user.attrs.find((attr) => attr.name === 'photo')?.value
+  };
+
+  return userDetails;
 };
 
 exports.getUserRole = async function (userId) {
@@ -143,6 +153,22 @@ exports.getUserHashedPassword = async function (userId) {
     return hashedPassword.value;
   } catch (error) {
     console.error(`Failed to get user hashed password: ${error}`);
+    return null;
+  }
+};
+
+exports.getUsersByOrg = async function (orgId) {
+  try {
+    const { gateway, contract } = await gatewayConnection(orgId);
+    const result = await contract.evaluateTransaction('getOrgData', orgId);
+    await gateway.disconnect();
+
+    const orgData = JSON.parse(result.toString());
+    console.log(`Retrieved orgData: ${JSON.stringify(orgData)}`);
+    const orgUsers = orgData || [];
+    return orgUsers;
+  } catch (error) {
+    console.error(`Failed to get users by organization: ${error}`);
     return null;
   }
 };

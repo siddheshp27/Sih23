@@ -1,10 +1,11 @@
 const registerUser = require('./utils/register');
 const userUtils = require('./user');
+const assignUserToOrg = require('./utils/assignUser');
 
 const registerDefaultUser = async () => {
   console.log('Register User!!!');
 
-  let userName = '12121211';
+  let userName = '12121212';
   let name = 'Aryan';
   let email = 'aryan@vit.edu';
   let dob = '08-12-2003';
@@ -29,3 +30,5 @@ const registerDefaultUser = async () => {
 };
 
 registerDefaultUser();
+
+
