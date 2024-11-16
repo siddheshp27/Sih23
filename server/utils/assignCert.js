@@ -10,6 +10,7 @@ async function assignCert({ orgId, userId, certificateId }) {
     try {
       const responseString = res.toString('utf8');
       responseJson = JSON.parse(responseString);
+      console.log('Response from chaincode:', responseJson);
     } catch (parseError) {
       console.error(`Failed to parse response: ${parseError}`);
       return { success: false, error: 'Failed to parse response from chaincode' };

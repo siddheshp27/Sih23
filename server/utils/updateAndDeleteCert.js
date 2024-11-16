@@ -6,7 +6,7 @@ async function deleteCert(clientId, certificateId) {
     const response = await contract.submitTransaction('deleteCertificate', clientId, certificateId);
     await gateway.disconnect();
     console.log(response.toString());
-    return response.toString();
+    return {success: true, data: response.toString()};
   } catch (error) {
     console.error(`Failed to delete certificate: ${error}`);
   }
@@ -18,7 +18,7 @@ async function editCert(clientId, certificateId, newCertificateData) {
     const response = await contract.submitTransaction('editCertificate', clientId, certificateId, JSON.stringify(newCertificateData));
     await gateway.disconnect();
     console.log(response.toString());
-    return response.toString();
+    return {success: true, data: response.toString()};
   } catch (error) {
     console.error(`Failed to edit certificate: ${error}`);
   }

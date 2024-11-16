@@ -34,10 +34,19 @@ router.post('/genCert/:orgId', async (req, res) => {
   const certificateData = req.body;
   const orgId = req.params.orgId;
   const certificateId = generateRandomUID();
-  console.log(certificateData, orgId, certificateId);
 
-  const response = genCert({ orgId, certificateId, certificateData });
-  res.status(200).json(response);
+  try {
+    const response = await genCert({ orgId, certificateId, certificateData });
+    console.log('Certificate generated successfully', response);
+    if (response.success) {
+      res.status(200).json(response.message);
+    } else {
+      res.status(500).json({ error: response.error });
+    }
+  } catch (error) {
+    console.error('Error generating certificate:', error.message);
+    res.status(500).json({ error: 'Failed to generate certificate' });
+  }
 });
 
 router.delete('/deleteCert/:certId', authMiddleware, async (req, res) => {
@@ -45,11 +54,11 @@ router.delete('/deleteCert/:certId', authMiddleware, async (req, res) => {
   const clientId = req.user.userName;
   try {
     const response = await deleteCert(clientId, certId);
-    
-    if (response) {
-      res.status(200).json({ message: 'Certificate deleted successfully' });
+
+    if (response.success) {
+      res.status(200).json(response.data);
     } else {
-      res.status(404).json({ error: 'Certificate not found' });
+      res.status(500).json({ error: response.error });
     }
   } catch (error) {
     console.error('Error deleting certificate:', error.message);
@@ -63,8 +72,9 @@ router.post('/editCert/:certId', authMiddleware, async (req, res) => {
   const newCertificateData = req.body;
   try {
     const response = await editCert(clientId, certId, newCertificateData);
-    if (response) {
-      res.status(200).json({ message: 'Certificate edited successfully' });
+    if (response.success) {
+      console.log('Certificate edited successfully', response.data);
+      res.status(200).json({ message: 'Certificate edited successfully', data: response.data });
     } else {
       res.status(404).json({ error: 'Certificate not found' });
     }
@@ -74,10 +84,10 @@ router.post('/editCert/:certId', authMiddleware, async (req, res) => {
   }
 });
 
-
 router.get('/getCertificates', authMiddleware, async (req, res) => {
-  const org = req.query.orgId;
-  const response = await getAllCerts({ orgId: org });
+  const orgId = req.user.userName;
+  console.log(orgId);
+  const response = await getAllCerts({ orgId });
   if (response.success) {
     res.status(200).json(response.data);
   } else {
@@ -94,8 +104,9 @@ router.post('/assignCert', authMiddleware, async (req, res) => {
     const certificateNumber = generateRandomUID();
     console.log(orgId, certificateNumber, userId, certificateId);
 
-    const response = assignCert({ orgId, certificateNumber, userId, certificateId });
+    const response = await assignCert({ orgId, certificateNumber, userId, certificateId });
     if (response.success) {
+      console.log('Certificate assigned successfully', response.message);
       res.status(200).json({ message: 'Certificate assigned successfully', data: response.message });
     } else {
       res.status(500).json({ error: response.error });

@@ -6,7 +6,13 @@ async function getCertificates({ orgId }) {
     const res = await contract.evaluateTransaction('getCertificatesByOrganization');
     const data = JSON.parse(res.toString());
     await gateway.disconnect();
-    return { success:true, data };
+
+    // Add lastModified field to each certificate
+    const certificates = data.map(cert => ({
+      ...cert,
+      lastModified: new Date().toISOString()
+    }));
+    return { success: true, data: certificates };
   } catch (error) {
     console.error(`Error in invokeDiagnosis: ${error}`);
     return { error };

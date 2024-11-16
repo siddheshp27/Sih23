@@ -7,7 +7,7 @@ async function genCert({ orgId, certificateId, certificateData }) {
     const allData = { certificateId, certificateData };
     const res = await contract.submitTransaction('genCertificate', JSON.stringify(allData));
     await gateway.disconnect();
-    return { success: res };
+    return { success: true, message: "Certificate generated successfully" };
   } catch (error) {
     console.error(`Error in invokeDiagnosis: ${error}`);
     return { error };

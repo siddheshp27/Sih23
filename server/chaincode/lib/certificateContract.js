@@ -163,22 +163,29 @@ class certificateContract extends Contract {
   async editCertificate(ctx, clientId, certificateId, newCertificateData) {
     const role = ctx.clientIdentity.getAttributeValue('role').toString();
     const clientIdentity = ctx.clientIdentity.getID().split('::')[1].split('/')[4].split('=')[1];
-
+  
     if (role === 'organization' || clientIdentity === clientId) {
       const compositeKey = ctx.stub.createCompositeKey('certificate', [clientId, certificateId]);
-      const certificate = await ctx.stub.getState(compositeKey);
-
-      if (!certificate || certificate.length === 0) {
+      const certificateBytes = await ctx.stub.getState(compositeKey);
+  
+      if (!certificateBytes || certificateBytes.length === 0) {
         throw new Error(`Certificate ${certificateId} does not exist for client ${clientId}`);
       }
-
-      const updatedCertificate = {
-        ...JSON.parse(certificate.toString()),
-        ...JSON.parse(newCertificateData)
+  
+      // Parse the existing certificate
+      const certificate = JSON.parse(certificateBytes.toString());
+      // Parse the new certificate data
+      const newCertificateDataParsed = JSON.parse(newCertificateData);
+  
+      // Update only the certificateData field
+      certificate.certificateData = {
+        ...certificate.certificateData,
+        ...newCertificateDataParsed
       };
-
-      await ctx.stub.putState(compositeKey, Buffer.from(JSON.stringify(updatedCertificate)));
-      return JSON.stringify({ success: `Certificate ${certificateId} updated for client ${clientId}` });
+  
+      // Write the updated certificate back to the ledger
+      await ctx.stub.putState(compositeKey, Buffer.from(JSON.stringify(certificate)));
+      return JSON.stringify({ success: `Certificate ${certificateId} updated for client ${clientId}`, data: certificate });
     } else {
       return JSON.stringify({ error: 'Only admin or the certificate owner can edit the certificate' });
     }
