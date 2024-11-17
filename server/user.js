@@ -166,9 +166,9 @@ exports.getUsersByOrg = async function (orgId) {
     const orgData = JSON.parse(result.toString());
     console.log(`Retrieved orgData: ${JSON.stringify(orgData)}`);
     const orgUsers = orgData || [];
-    return orgUsers;
+    return { success: true, orgUsers };
   } catch (error) {
     console.error(`Failed to get users by organization: ${error}`);
-    return null;
+    return { success: false, orgUsers: null };
   }
 };

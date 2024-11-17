@@ -95,6 +95,23 @@ router.get('/getCertificates', authMiddleware, async (req, res) => {
   }
 });
 
+
+router.get('/getUserCount',authMiddleware, async (req, res) => {
+  const orgId = req.user.userName;
+  try {
+    const response = await userUtils.getUsersByOrg(orgId);
+    if(response.success){
+      const userCount = response.orgUsers.length;
+      res.status(200).json({userCount});
+    }else{
+      res.status(404).json({ error: 'Organization not found' });
+    }
+  } catch (error) {
+    console.error('Error fetching organization users:', error.message);
+    res.status(500).json({ error: 'Failed to fetch organization users' });
+  }
+});
+
 router.post('/assignCert', authMiddleware, async (req, res) => {
   const { id: certificateId, userName: userId } = req.body;
   console.log('assignCert', certificateId, userId);
@@ -145,8 +162,12 @@ router.post('/assignUserToOrg', authMiddleware, async (req, res) => {
 router.get('/orgUsers/:orgId', async (req, res) => {
   const orgId = req.params.orgId;
   try {
-    const orgData = await userUtils.getUsersByOrg(orgId);
-    res.status(200).json(orgData);
+    const response = await userUtils.getUsersByOrg(orgId);
+    if(response.success){
+      res.status(200).json(response.orgUsers);
+    }else{
+      res.status(404).json({ error: 'Organization not found' });
+    }
   } catch (error) {
     console.error('Error fetching organization users:', error.message);
     res.status(500).json({ error: 'Failed to fetch organization users' });
