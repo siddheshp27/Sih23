@@ -1,10 +1,6 @@
 'use strict';
 
 const { Contract } = require('fabric-contract-api');
-// const crypto = require('crypto');
-// const { X509Identity } = require('fabric-shim');
-// const util = require('util');
-// const { access } = require('fs');
 
 class certificateContract extends Contract {
   async initLedger(ctx) {
@@ -45,7 +41,7 @@ class certificateContract extends Contract {
     console.log(`Retrieved orgData: ${orgData.toString()}`);
     return orgData.toString();
   }
-  
+
   async addCert(ctx, userId, uId, certId) {
     //only the creator of the certificate can add it to persons id
     //all the certinfo will be taken from the desc while accessing
@@ -163,26 +159,26 @@ class certificateContract extends Contract {
   async editCertificate(ctx, clientId, certificateId, newCertificateData) {
     const role = ctx.clientIdentity.getAttributeValue('role').toString();
     const clientIdentity = ctx.clientIdentity.getID().split('::')[1].split('/')[4].split('=')[1];
-  
+
     if (role === 'organization' || clientIdentity === clientId) {
       const compositeKey = ctx.stub.createCompositeKey('certificate', [clientId, certificateId]);
       const certificateBytes = await ctx.stub.getState(compositeKey);
-  
+
       if (!certificateBytes || certificateBytes.length === 0) {
         throw new Error(`Certificate ${certificateId} does not exist for client ${clientId}`);
       }
-  
+
       // Parse the existing certificate
       const certificate = JSON.parse(certificateBytes.toString());
       // Parse the new certificate data
       const newCertificateDataParsed = JSON.parse(newCertificateData);
-  
+
       // Update only the certificateData field
       certificate.certificateData = {
         ...certificate.certificateData,
         ...newCertificateDataParsed
       };
-  
+
       // Write the updated certificate back to the ledger
       await ctx.stub.putState(compositeKey, Buffer.from(JSON.stringify(certificate)));
       return JSON.stringify({ success: `Certificate ${certificateId} updated for client ${clientId}`, data: certificate });
@@ -190,7 +186,6 @@ class certificateContract extends Contract {
       return JSON.stringify({ error: 'Only admin or the certificate owner can edit the certificate' });
     }
   }
-
 
   async getCertificatesByOrganization(ctx) {
     const role = ctx.clientIdentity.getAttributeValue('role').toString();
@@ -213,7 +208,7 @@ class certificateContract extends Contract {
     const certificate = await ctx.stub.getState(compositeKey);
     const role = ctx.clientIdentity.getAttributeValue('role').toString();
     console.log(certificate);
-  
+
     if (role === 'organization' && certificate) {
       let certData = {
         certificateId
@@ -226,6 +221,34 @@ class certificateContract extends Contract {
     }
   }
 
+  async getUserCertificates(ctx, userId) {
+    const iterator = await ctx.stub.getStateByPartialCompositeKey('usercertificate', [userId]);
+    const assignedCertificates = [];
+  
+    while (true) {
+      const res = await iterator.next();
+  
+      if (res.value && res.value.value.toString()) {
+        const assignment = JSON.parse(res.value.value.toString());
+        const certificateId = assignment.certificateId;
+  
+        // Optionally, retrieve full certificate details
+        const certificateBytes = await ctx.stub.getState(certificateId);
+        if (certificateBytes && certificateBytes.length > 0) {
+          const certificate = JSON.parse(certificateBytes.toString());
+          assignedCertificates.push(certificate);
+        }
+      }
+  
+      if (res.done) {
+        await iterator.close();
+        break;
+      }
+    }
+  
+    return JSON.stringify(assignedCertificates);
+  }
+  
   async getCertificatesByUser(ctx) {
     const role = ctx.clientIdentity.getAttributeValue('role').toString();
     const clientId = ctx.clientIdentity.getID().split('::')[1].split('/')[4].split('=')[1];
@@ -268,6 +291,10 @@ class certificateContract extends Contract {
       if (!orgUsers.includes(userId)) {
         orgUsers.push(userId);
         await ctx.stub.putState(orgId, Buffer.from(JSON.stringify(orgUsers)));
+
+        // Store mapping from userId to orgId
+        const userOrgKey = ctx.stub.createCompositeKey('userOrg', [userId]);
+        await ctx.stub.putState(userOrgKey, Buffer.from(orgId));
         console.log(`Updated orgUsers: ${JSON.stringify(orgUsers)}`);
         return JSON.stringify({ success: `User ${userId} assigned to organization ${orgId}` });
       } else {
@@ -278,90 +305,20 @@ class certificateContract extends Contract {
     }
   }
 
-  // async getCertificates(ctx) {
-  //   const userId = ctx.clientIdentity.getID().split('::')[1].split('/')[4].split('=')[1];
-  //   const role = ctx.clientIdentity.getAttributeValue('role').toString();
-  //   // console.log();
-  //   if (role === 'organization') {
-  //     let iteratorAllCertsIds = await ctx.stub.getHistoryForKey(userId);
-  //     let certIds = await this.getIteratorData(iteratorAllCertsIds);
+  // In certificateContract.js
 
-  //     console.log(certIds[0]);
-  //     const allCerts = {};
+  async getUserOrg(ctx, userId) {
+    const userOrgKey = ctx.stub.createCompositeKey('userOrg', [userId]);
+    const orgIdBytes = await ctx.stub.getState(userOrgKey);
 
-  //     certIds.forEach(async (id) => {
-  //       console.log(id);
-  //       const res = await ctx.stub.getState(id);
-  //       const data = await res.toString();
-  //       console.log(data);
-  //       allCerts[id] = data;
-  //     });
-  //     return JSON.stringify(allCerts);
-  //   }
-  // }
-
-  // {
-  // async writeData(ctx, patientId, data) {
-  // 	let patientData = JSON.parse(data);
-  // 	await ctx.stub.putState(patientId, Buffer.from(JSON.stringify(patientData)));
-  // 	return Buffer.from(JSON.stringify(patientData));
-  // }
-
-  // async readData(ctx, patientId) {
-  // 	let patientDataAsBuffer = await ctx.stub.getState(patientId);
-
-  // 	const patientData = JSON.parse(patientDataAsBuffer.toString());
-  // 	return JSON.stringify(patientData);
-  // }
-
-  // async readHistoryData(ctx, patientId) {
-  // 	let iterator = await ctx.stub.getHistoryForKey(patientId);
-  // 	let result = await this.getIteratorData(iterator);
-  // 	return JSON.stringify(result);
-  // }
-
-  // async getCertificatesByOrganization(ctx) {
-  // const userId = ctx.clientIdentity.getID().split('::')[1].split('/')[4].split('=')[1];
-  //   const role = ctx.clientIdentity.getAttributeValue('role').toString();
-
-  //   if (role === 'organization') {
-  //     const orgMSPID = ctx.clientIdentity.getMSPID();
-  //     const queryString = {
-  //       selector: {
-  //         _id: {
-  //           $regex: `^\\u0000certificate\\u0000${orgMSPID}\\u0000.*`
-  //         }
-  //       }
-  //     };
-  //     // const queryString = { selector: { orgMSPID } };
-  //     const iterator = await ctx.stub.getQueryResult(JSON.stringify(queryString));
-  //     // console.log(iterator);
-  //     const certificates = await this.getIteratorData(iterator);
-  //     return JSON.stringify(certificates);
-  //     // return { iterator };
-  //   }
-  // }
-
-  //   async getIteratorData(iterator) {
-  //   //   let resultArray = [];
-
-  //   //   // Extract the result array from the wrapped iterator
-  //   //   console.log(iterator);
-  //   //   console.log('=========================================================================');
-  //   //   console.log(iterator.response);
-  //   //   const { array } = iterator.response;
-
-  //   //   for (let i = 0; i < array.length; i++) {
-  //   //     if (array[i].length > 0) {
-  //   //       const obj = JSON.parse(array[i][0].toString('utf8'));
-  //   //       resultArray.push(obj);
-  //   //     }
-  //   //   }
-
-  //   //   return resultArray;
-  //   // }
-
-  // }
+    if (!orgIdBytes || orgIdBytes.length === 0) {
+      return JSON.stringify({ message: `User ${userId} is not assigned to any organization` });
+    } else {
+      const orgId = orgIdBytes.toString();
+      return JSON.stringify({ orgId });
+    }
+  }
+ 
 }
 
 module.exports = certificateContract;

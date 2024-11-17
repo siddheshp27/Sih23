@@ -87,6 +87,26 @@ exports.getUserById = async function (userId) {
   return userDetails;
 };
 
+exports.getOrgById = async function (userId) {
+  const userList = await this.getUserList();
+
+  if (!userList) {
+    return;
+  }
+
+  let user = userList.find((user) => user.id === userId);
+
+  // Extract the required fields from the attrs array
+  const userDetails = {
+    role: user.attrs.find((attr) => attr.name === 'role')?.value,
+    username: user.attrs.find((attr) => attr.name === 'username')?.value,
+    name: user.attrs.find((attr) => attr.name === 'orgName')?.value,
+    email: user.attrs.find((attr) => attr.name === 'email')?.value,
+  };
+
+  return userDetails;
+};
+
 exports.getUserRole = async function (userId) {
   const userList = await this.getUserList();
   if (!userList) {
