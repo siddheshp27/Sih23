@@ -102,9 +102,9 @@ router.get('/getUserCount',authMiddleware, async (req, res) => {
     const response = await userUtils.getUsersByOrg(orgId);
     if(response.success){
       const userCount = response.orgUsers.length;
-      res.status(200).json({userCount});
+      res.status(200).json({success:true,userCount});
     }else{
-      res.status(404).json({ error: 'Organization not found' });
+      res.status(200).json({ success:false,userCount: 0 });
     }
   } catch (error) {
     console.error('Error fetching organization users:', error.message);

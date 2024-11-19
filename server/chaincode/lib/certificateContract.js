@@ -1,6 +1,7 @@
 'use strict';
 
 const { Contract } = require('fabric-contract-api');
+const crypto = require('crypto');
 
 class certificateContract extends Contract {
   async initLedger(ctx) {
@@ -126,6 +127,7 @@ class certificateContract extends Contract {
     if (role === 'organization') {
       // const creator = ctx.stub.getCreator();
       // console.log(`creator : ${creator}`);
+
       let certData = {
         admin: clientId,
         certificateId,
@@ -205,16 +207,25 @@ class certificateContract extends Contract {
     const clientId = ctx.clientIdentity.getID().split('::')[1].split('/')[4].split('=')[1];
     const fieldsComposite = [clientId, certificateId];
     const compositeKey = ctx.stub.createCompositeKey('certificate', fieldsComposite);
-    const certificate = await ctx.stub.getState(compositeKey);
+    const certificateBuffer = await ctx.stub.getState(compositeKey);
     const role = ctx.clientIdentity.getAttributeValue('role').toString();
-    console.log(certificate);
 
-    if (role === 'organization' && certificate) {
-      let certData = {
-        certificateId
+    if (role === 'organization' && certificateBuffer.length > 0) {
+      const certificate = JSON.parse(certificateBuffer.toString());
+
+      // Compute a hash combining certificate template and user-specific details
+      const certificateData = JSON.stringify({ certificateId, userId });
+      const hash = crypto.createHash('sha256').update(certificateData).digest('hex');
+      console.log(`Computed hash: ${hash}`);
+      const userCertificateData = {
+        certificateId,
+        userId,
+        hash // Store the hash for validation
       };
+
       const userCompositeKey = ctx.stub.createCompositeKey('usercertificate', [userId, certificateId]);
-      await ctx.stub.putState(userCompositeKey, Buffer.from(JSON.stringify(certData)));
+      await ctx.stub.putState(userCompositeKey, Buffer.from(JSON.stringify(userCertificateData)));
+
       return JSON.stringify({ success: `Certificate ${certificateId} assigned to user ${userId}` });
     } else {
       return JSON.stringify({ error: 'Only organizations can assign certificates or certificate does not exist' });
@@ -222,33 +233,89 @@ class certificateContract extends Contract {
   }
 
   async getUserCertificates(ctx, userId) {
+    // Retrieve the organization ID (clientId) for the user
+    const userOrgKey = ctx.stub.createCompositeKey('userOrg', [userId]);
+    const orgIdBytes = await ctx.stub.getState(userOrgKey);
+
+    if (!orgIdBytes || orgIdBytes.length === 0) {
+      return JSON.stringify({ error: `Organization ID for user ${userId} not found.` });
+    }
+
+    const clientId = orgIdBytes.toString(); // Extract clientId (organization ID)
+    console.log(`Retrieved clientId (organization ID) for user ${userId}: ${clientId}`);
+
+    // Retrieve assigned certificates for the user
     const iterator = await ctx.stub.getStateByPartialCompositeKey('usercertificate', [userId]);
     const assignedCertificates = [];
-  
+
     while (true) {
       const res = await iterator.next();
-  
+
       if (res.value && res.value.value.toString()) {
-        const assignment = JSON.parse(res.value.value.toString());
-        const certificateId = assignment.certificateId;
-  
-        // Optionally, retrieve full certificate details
-        const certificateBytes = await ctx.stub.getState(certificateId);
-        if (certificateBytes && certificateBytes.length > 0) {
-          const certificate = JSON.parse(certificateBytes.toString());
-          assignedCertificates.push(certificate);
+        try {
+          // Parse the user assignment data
+          const assignment = JSON.parse(res.value.value.toString());
+          const { certificateId, hash } = assignment;
+
+          console.log(`Processing assignment: ${certificateId} for user ${userId} with hash ${hash}`);
+
+          // Construct the composite key to retrieve certificate details
+          const orgCompositeKey = ctx.stub.createCompositeKey('certificate', [clientId, certificateId]);
+          const certificateBytes = await ctx.stub.getState(orgCompositeKey);
+
+          if (certificateBytes && certificateBytes.length > 0) {
+            const certificate = JSON.parse(certificateBytes.toString());
+
+            // Validate the hash
+            const certificateData = JSON.stringify({ certificateId, userId });
+            const recomputedHash = crypto.createHash('sha256').update(certificateData).digest('hex');
+
+            if (recomputedHash === hash) {
+              // Add the certificate to the list if valid
+              assignedCertificates.push({
+                certificateId,
+                userId,
+                certificateDetails: certificate,
+                status: 'Verified'
+              });
+            } else {
+              // Include tampered certificates for auditing purposes
+              assignedCertificates.push({
+                certificateId,
+                userId,
+                status: 'Tampered',
+                error: 'Hash mismatch'
+              });
+            }
+          } else {
+            // Handle missing certificate details
+            assignedCertificates.push({
+              certificateId,
+              userId,
+              status: 'Not Found',
+              error: 'Certificate details missing'
+            });
+          }
+        } catch (error) {
+          // Log and handle errors for debugging
+          console.error('Error processing assignment:', error);
+          assignedCertificates.push({
+            userId,
+            status: 'Error',
+            error: error.message
+          });
         }
       }
-  
+
       if (res.done) {
         await iterator.close();
         break;
       }
     }
-  
+
     return JSON.stringify(assignedCertificates);
   }
-  
+
   async getCertificatesByUser(ctx) {
     const role = ctx.clientIdentity.getAttributeValue('role').toString();
     const clientId = ctx.clientIdentity.getID().split('::')[1].split('/')[4].split('=')[1];
@@ -318,7 +385,6 @@ class certificateContract extends Contract {
       return JSON.stringify({ orgId });
     }
   }
- 
 }
 
 module.exports = certificateContract;

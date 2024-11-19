@@ -7,7 +7,6 @@ const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const dotenv = require('dotenv');
 const cors = require('cors');
-const { uploadToS3 } = require('../aws/awsS3');
 const fetchPhotoFromDigiLocker = require('../utils/getPhoto');
 dotenv.config();
 // const { authMiddleware, isAdmin } = require('../routes')

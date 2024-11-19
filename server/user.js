@@ -189,6 +189,6 @@ exports.getUsersByOrg = async function (orgId) {
     return { success: true, orgUsers };
   } catch (error) {
     console.error(`Failed to get users by organization: ${error}`);
-    return { success: false, orgUsers: null };
+    return { success: false, orgUsers: 0 };
   }
 };

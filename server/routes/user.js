@@ -5,6 +5,7 @@ const { getUserOrg } = require('../utils/getUserOrg');
 const {getOrgDetails} = require('../utils/getOrgDetails');
 const jwt = require('jsonwebtoken');
 const { get } = require('./organization');
+const { getUserCertificates } = require('../utils/getUserCertificate');
 
 const authMiddleware = (req, res, next) => {
   const token = req.headers && req.headers['authorization'] ? req.headers['authorization'].split(' ')[1] : undefined;
@@ -42,7 +43,7 @@ router.get('/getUserOrg', async (req, res) => {
   }
 });
 
-router.get('/getUserCertificates', authMiddleware, async (req, res) => {
+router.get('/getUserCertificates', async (req, res) => {
   const { userId } = req.query;
 
   try {
