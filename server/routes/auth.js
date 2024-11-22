@@ -239,10 +239,10 @@ router.post('/registerUser', async (req, res) => {
 
   try {
     // Check if the user already exists
-    let user = await userUtils.getUserById(userName);
-    if (user) {
-      return res.status(409).json('User Already Exists');
-    }
+    // let user = await userUtils.getUserById(userName);
+    // if (user) {
+    //   return res.status(409).json('User Already Exists');
+    // }
 
     // Fetch photo from DigiLocker API
     const photo = await fetchPhotoFromDigiLocker(reqId);

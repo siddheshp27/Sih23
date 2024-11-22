@@ -75,6 +75,11 @@ exports.getUserById = async function (userId) {
 
   let user = userList.find((user) => user.id === userId);
 
+  if (!user) {
+    // Handle the case when the user is not found
+    console.error(`User with ID ${userId} not found.`);
+    return null; // or throw an error if preferred
+  }
   // Extract the required fields from the attrs array
   const userDetails = {
     username: user.attrs.find((attr) => attr.name === 'username')?.value,

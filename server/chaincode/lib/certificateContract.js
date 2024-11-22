@@ -203,6 +203,30 @@ class certificateContract extends Contract {
     }
   }
 
+  async checkHash(ctx, certificateId, userId) {
+    // Recreate the certificate data used during assignment
+    const certificateData = JSON.stringify({ certificateId, userId });
+    const computedHash = crypto.createHash('sha256').update(certificateData).digest('hex');
+  
+    // Create the composite key for the user certificate assignment
+    const userCompositeKey = ctx.stub.createCompositeKey('usercertificate', [userId, certificateId]);
+  
+    // Retrieve the stored user certificate data
+    const userCertificateBytes = await ctx.stub.getState(userCompositeKey);
+    if (!userCertificateBytes || userCertificateBytes.length === 0) {
+      return JSON.stringify({ valid: false, message: 'User certificate not found' });
+    }
+  
+    const userCertificateData = JSON.parse(userCertificateBytes.toString());
+  
+    // Compare the computed hash with the stored hash
+    if (userCertificateData.hash === computedHash) {
+      return JSON.stringify({ valid: true, message: 'Certificate data is valid' });
+    } else {
+      return JSON.stringify({ valid: false, message: 'Certificate data is invalid' });
+    }
+  }
+
   async assignCertificate(ctx, userId, certificateId) {
     const clientId = ctx.clientIdentity.getID().split('::')[1].split('/')[4].split('=')[1];
     const fieldsComposite = [clientId, certificateId];
